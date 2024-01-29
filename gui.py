@@ -1,121 +1,88 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton
-from PyQt5.QtGui import QPixmap
-import sys
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QColor
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QScrollArea
+from BaseWindow import BaseWindow, CustomTitleBar
 
 
-class BaseWindow(QWidget):
-    def __init__(self, title, image_path):
-        super().__init__()
+class MainWindow(BaseWindow):
+    def __init__(self):
+        super().__init__("Main", "pictures\\main.png")
+        self.setup_buttons("Sign In", (950, 350), (160, 200), self.go_to_sign_in)
+        self.setup_buttons("Sign Up", (1100, 690), (140, 50), self.go_to_sign_up)
+        self.setup_buttons("About", (500, 345), (160, 200), lambda: self.navigate_to(AboutWindow))
 
-        self.setWindowTitle(title)
-        self.setFixedSize(1280, 800)
-
-        # Use QVBoxLayout as the main layout
-        self.main_layout = QVBoxLayout()
-        self.setLayout(self.main_layout)
-
-        # Set background image using stylesheet with no-repeat
-        self.setStyleSheet(f"background-image: url({image_path}); background-repeat: no-repeat;")
-
-        # Example QLabel with an image
-        image_label = QLabel()
-        pixmap = QPixmap(image_path)
-        image_label.setPixmap(pixmap)
-        self.main_layout.addWidget(image_label)
-
-        # Create an attribute to hold the Windows instance
         self.sign_in_window = None
         self.sign_up_window = None
-        self.about_window = None
-        self.forgot_password_window = None
-
-    def add_transparent_button(self, text, slot):
-        button = QPushButton(text)
-        button.setFlat(True)
-        button.setStyleSheet("color: white; background-color: transparent; border: none; font-size: 18px;")
-        button.clicked.connect(slot)
-        self.main_layout.addWidget(button)
 
     def go_to_sign_in(self):
+        from Loging_in import SignInWindow
         # Check if the SignInWindow instance exists
         if not self.sign_in_window or not self.sign_in_window.isVisible():
             self.sign_in_window = SignInWindow()
             self.sign_in_window.show()
 
     def go_to_sign_up(self):
+        from Loging_in import SignUpWindow
         # Check if the SignInWindow instance exists
         if not self.sign_up_window or not self.sign_up_window.isVisible():
             self.sign_up_window = SignUpWindow()
             self.sign_up_window.show()
 
-    def go_to_about(self):
-        # Check if the SignInWindow instance exists
-        if not self.about_window or not self.about_window.isVisible():
-            self.about_window = AboutWindow()
-            self.about_window.show()
-
-    def go_to_forgot_password(self):
-        # Check if the forgotpassword instance exists
-        if not self.forgot_password_window or not self.forgot_password_window.isVisible():
-            self.forgot_password_window = ForgotPasswordWindow()
-            self.forgot_password_window.show()
-
-
-class MainWindow(BaseWindow):
+class AboutWindow(QWidget):
     def __init__(self):
-        super().__init__("Main", "C:/cyber 2024/tirosh/pics/main.png")
-        # Transparent buttons
-        self.add_transparent_button("SignIn", self.go_to_sign_in)
-        self.add_transparent_button("SignUp", self.go_to_sign_up)
-        self.add_transparent_button("About", self.go_to_about)
+        super().__init__()
+        self.setWindowTitle("About")
+        self.setFixedSize(1280, 800)
+        self.image_path = "pictures\\about.png"
 
+        self.setAutoFillBackground(True)
+        palette = self.palette()
+        palette.setColor(self.backgroundRole(), QColor('#2E3B5B'))
+        self.setPalette(palette)
 
-class SignUpWindow(BaseWindow):
-    def __init__(self):
-        super().__init__("SignUp", "C:/cyber 2024/tirosh/pics/signUp.png")
-        # Transparent buttons
-        self.add_transparent_button("SignIn", self.go_to_sign_in)
-        self.add_transparent_button("SignIn", self.go_to_forgot_password())
+        self.main_layout = QVBoxLayout()
+        self.setLayout(self.main_layout)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
 
+        self.titleBar = CustomTitleBar()
+        self.main_layout.addWidget(self.titleBar)
 
-class SignInWindow(BaseWindow):
-    def __init__(self):
-        super().__init__("SignIn", "C:/cyber 2024/tirosh/pics/signIn.png")
-        self.add_transparent_button("SignUp", self.go_to_sign_up)
-        self.add_transparent_button("SignIn", self.go_to_forgot_password())
+        self.moving = False
+        self.offset = None
 
+        self.setWindowFlags(Qt.FramelessWindowHint)
 
-class PTestToolWindow(BaseWindow):
-    def __init__(self):
-        super().__init__("Ptest tool", "C:/cyber 2024/tirosh/pics/pTestTool.png")
+        self.scroll = QScrollArea(self)
+        self.scroll.setWidgetResizable(False)
+        self.scroll.setStyleSheet("background: transparent;")
 
+        # Scrollable Content
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
 
-class AboutWindow(BaseWindow):
-    def __init__(self):
-        super().__init__("About", "C:/cyber 2024/tirosh/pics/about.png")
+        # QLabel for the image
+        self.image_label = QLabel(content)
+        pixmap = QPixmap(self.image_path)
+        self.image_label.setPixmap(pixmap)
+        content_layout.addWidget(self.image_label)
 
+        self.scroll.setWidget(content)
+        self.main_layout.addWidget(self.scroll)
 
-class HistoryWindow(BaseWindow):
-    def __init__(self):
-        super().__init__("History", "C:/cyber 2024/tirosh/pics/history.png")
+        # Buttons and other widgets can be added here
+        self.setup_buttons("Main", (996, 30), (250, 65), lambda: self.navigate_to(MainWindow))
 
+        self.windows = {}
 
-class ChangePasswordWindow(BaseWindow):
-    def __init__(self):
-        super().__init__("Change password", "C:/cyber 2024/tirosh/pics/changePassword.png")
+    def setup_buttons(self, text, location, size, slot):
+        button = QPushButton(text, self)
+        button.setStyleSheet("color: rgba(255, 255, 255, 0);background-color: transparent; font-size: 18px;")
+        button.setFixedSize(*size)
+        button.move(*location)
+        button.clicked.connect(slot)
 
-
-class ForgotPasswordWindow(BaseWindow):
-    def __init__(self):
-        super().__init__("Forgot password", "C:/cyber 2024/tirosh/pics/forgotPassword.png")
-
-
-class ForgotPassword2Window(BaseWindow):
-    def __init__(self):
-        super().__init__("Forgot password", "C:/cyber 2024/tirosh/pics/forgotPassword2.png")
-
-
-app = QApplication(sys.argv)
-window = MainWindow()
-window.showMaximized()
-sys.exit(app.exec_())
+    def navigate_to(self, window_class):
+        if window_class not in self.windows or not self.windows[window_class].isVisible():
+            self.close()
+            self.windows[window_class] = window_class()
+            self.windows[window_class].show()
