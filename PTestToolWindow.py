@@ -10,5 +10,5 @@ class PTestToolWindow(BaseWindow):
         self.setup_buttons("SignIn", (613, 74), (85, 20), lambda: self.navigate_to(MainWindow))  # logout
         self.setup_buttons("temp", (851, 377), (50, 50), lambda: self.navigate_to(AboutWindow))  # search
 
-    def addSearchBar(self):
-        self.s
+    # def addSearchBar(self):
+    #     self.s

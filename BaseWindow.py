@@ -42,9 +42,9 @@ class BaseWindow(QWidget):
 
     def navigate_to(self, window_class):
         if window_class not in self.windows or not self.windows[window_class].isVisible():
-            self.close()
             self.windows[window_class] = window_class()
             self.windows[window_class].show()
+            self.close()
 
     def setup_buttons(self, text, location, size, slot):
         button = QPushButton(text, self)
@@ -53,9 +53,9 @@ class BaseWindow(QWidget):
         button.move(*location)
         button.clicked.connect(slot)
 
-    # def mousePressEvent(self, event):
-    #     x, y = event.x(), event.y()
-    #     print(f"Mouse Clicked at: ({x}, {y})")
+    def mousePressEvent(self, event):
+        x, y = event.x(), event.y()
+        print(f"Mouse Clicked at: ({x}, {y})")
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -83,12 +83,12 @@ class CustomTitleBar(QWidget):
     def onClose(self):
         self.window().close()
 
-    def mousePressEvent(self, event):
-        x, y = event.x(), event.y()
-        if y < 20:
-            if event.button() == Qt.LeftButton:
-                self.parent().moving = True
-                self.parent().offset = event.pos()
+    # def mousePressEvent(self, event):
+    #     x, y = event.x(), event.y()
+    #     if y < 20:
+    #         if event.button() == Qt.LeftButton:
+    #             self.parent().moving = True
+    #             self.parent().offset = event.pos()
 
     def mouseMoveEvent(self, event):
         x, y = event.x(), event.y()
