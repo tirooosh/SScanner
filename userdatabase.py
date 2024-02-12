@@ -41,12 +41,10 @@ def setup_database():
 def signup(name, email, password):
     conn = create_connection("usersTable.db")
     cursor = conn.cursor()
-
     query = "SELECT * FROM users WHERE email=?"
     cursor.execute(query, (email,))
     if cursor.fetchone():
         return False, "Email already exists."
-
     insert_sql = '''INSERT INTO users(name, email, password) VALUES(?,?,?)'''
     cursor.execute(insert_sql, (name, email, password))
     conn.commit()
@@ -56,34 +54,60 @@ def signup(name, email, password):
 def login(email, password):
     conn = create_connection("usersTable.db")
     cursor = conn.cursor()
-
     query = "SELECT * FROM users WHERE email=? AND password=?"
     cursor.execute(query, (email, password))
     record = cursor.fetchone()
-
     if record:
         return True, "Login successful."
     else:
         return False, "Login failed. Incorrect email or password."
 
 
+def change_password(email, new_password):
+    conn = create_connection("usersTable.db")
+    cursor = conn.cursor()
+    update_sql = "UPDATE users SET password = ? WHERE email = ?"
+    cursor.execute(update_sql, (new_password, email))
+    conn.commit()
+    if cursor.rowcount == 0:
+        return False, "Password change failed."
+    return True, "Password changed successfully."
+
+
+def change_name(email, new_name):
+    conn = create_connection("usersTable.db")
+    cursor = conn.cursor()
+    update_sql = "UPDATE users SET name = ? WHERE email = ?"
+    cursor.execute(update_sql, (new_name, email))
+    conn.commit()
+    if cursor.rowcount == 0:
+        return False, "Name change failed."
+    return True, "Name changed successfully."
+
 # Main function to demonstrate functionality
-def main():
-    setup_database()
-
-    # Signup a new user
-    name = "John Doe"
-    email = "john@example.com"
-    password = "123456"
-    signup_status, message = signup(name, email, password)
-    print(message)
-
-    # Prompt for login
-    email_input = input("Enter email: ")
-    password_input = input("Enter password: ")
-    login_status, message = login(email_input, password_input)
-    print(message)
-
-
-if __name__ == '__main__':
-    main()
+# def main():
+# setup_database()
+#
+# # Signup a new user
+# name = "John Doe"
+# email = "john@example.com"
+# password = "123456"
+# signup_status, message = signup(name, email, password)
+# print(message)
+#
+# # Assume user logged in here and wants to change their password and name
+# new_password = "newpassword123"
+# new_name = "Jonathan Doe"
+# password_change_status, password_change_message = change_password(email, new_password)
+# print(password_change_message)
+# name_change_status, name_change_message = change_name(email, new_name)
+# print(name_change_message)
+#
+# # Prompt for login with new credentials
+# email_input = input("Enter email: ")
+# password_input = input("Enter new password: ")  # Prompting for the new password
+# login_status, message = login(email_input, password_input)
+# print(message)
+#
+# if __name__ == '__main__':
+#     main()
