@@ -2,7 +2,7 @@ from BaseWindow import BaseWindow
 from PTestToolWindow import PTestToolWindow
 from PyQt5.QtWidgets import QLineEdit
 import re
-
+import userdatabase
 
 class SignUpWindow(BaseWindow):
     def __init__(self):
@@ -93,7 +93,8 @@ class SignUpWindow(BaseWindow):
             return
 
         # If all checks passed, proceed to the next window
-        self.navigate_to(PTestToolWindow)
+        if userdatabase.signup(name, email, password):
+            self.navigate_to(PTestToolWindow)
 
     def is_valid_email(self, email):
         # Basic email validation using regular expression
@@ -106,7 +107,7 @@ class SignInWindow(BaseWindow):
         super().__init__("SignIn", "pictures\\signIn.png")
         self.setup_buttons("Sign Up", (905, 635), (80, 20), lambda: self.navigate_to(SignUpWindow))
         self.setup_buttons("Forgot Password", (905, 665), (165, 20), lambda: self.navigate_to(ForgotPasswordWindow))
-        self.setup_buttons("PTest Tool", (660, 565), (375, 50), self.check_credintials)
+        self.setup_buttons("PTest Tool", (660, 565), (375, 50), self.check_credentials)
         self.setup_buttons("Main", (996, 30), (250, 65), self.go_to_main)
 
         # email input field
@@ -146,10 +147,11 @@ class SignInWindow(BaseWindow):
             # If the password is currently shown, hide it
             self.password_input.setEchoMode(QLineEdit.Password)
 
-    def check_credintials(self):
+    def check_credentials(self):
         email = self.email_input.text()
         password = self.password_input.text()
-        if True:
+        can_login, str0 = userdatabase.login(email,password)
+        if can_login:
             self.navigate_to(PTestToolWindow)
         else:
             print("not valid")
@@ -257,7 +259,7 @@ class ChangePasswordWindow(BaseWindow):
         from hub import MainWindow
         self.navigate_to(MainWindow)
 
-    def check_credentials(self):
+    def check_credentials(self, email):
         # Get input values
         password = self.password_input.text()
         repeat_password = self.repeat_password_input.text()
@@ -272,4 +274,5 @@ class ChangePasswordWindow(BaseWindow):
             return
 
         # If all checks passed, proceed to the next window
-        self.navigate_to(PTestToolWindow)
+        if userdatabase.change_password(email, password):
+            self.navigate_to(PTestToolWindow)

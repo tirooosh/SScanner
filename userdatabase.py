@@ -57,7 +57,7 @@ def login(email, password):
     query = "SELECT * FROM users WHERE email=? AND password=?"
     cursor.execute(query, (email, password))
     record = cursor.fetchone()
-    if record:
+    if record is not None:
         return True, "Login successful."
     else:
         return False, "Login failed. Incorrect email or password."
