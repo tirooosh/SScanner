@@ -5,8 +5,8 @@ import re
 import userdatabase
 import random
 import smtplib
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
 
 class SignUpWindow(BaseWindow):
     def __init__(self):
@@ -98,7 +98,7 @@ class SignUpWindow(BaseWindow):
 
         # If all checks passed, proceed to the next window
         if userdatabase.signup(name, email, password):
-            self.navigate_to(PTestToolWindow)
+            self.navigate_to(PTestToolWindow, email=email)
 
     def is_valid_email(self, email):
         # Basic email validation using regular expression
@@ -156,7 +156,7 @@ class SignInWindow(BaseWindow):
         password = self.password_input.text()
         can_login, str0 = userdatabase.login(email, password)
         if can_login:
-            self.navigate_to(PTestToolWindow)
+            self.navigate_to(PTestToolWindow, email=email)
         else:
             print("not valid")
 
@@ -195,11 +195,14 @@ class ForgotPassword2Window(BaseWindow):
         super().__init__("Forgot password", "pictures\\forgotPassword2.png")
         self.email = email
         self.setup_ui()
-        self.send_confirmation_code()
+        self.send_reset_code()
 
     def setup_ui(self):
         self.setup_buttons("Change Password", (660, 565), (375, 50), self.check_credentials)
         self.setup_buttons("Main", (996, 30), (250, 65), self.go_to_main)
+
+        # Generate and send reset code
+        self.reset_code = str(random.randint(100000, 999999))
 
         self.confirmation_input = QLineEdit(self)
         self.confirmation_input.setGeometry(621, 336, 423, 53)
@@ -211,33 +214,37 @@ class ForgotPassword2Window(BaseWindow):
                 font-size: 18px;
             }""")
 
-    def send_mail(self, email, code):
-        # Assuming a local SMTP debugging server is running
-        # python -m smtpd -c DebuggingServer -n localhost:1025
-
-        msg = MIMEText("Your confirmation code is: " + code)
-        msg['Subject'] = "Confirmation Code"
-        msg['From'] = "no-reply@example.com"  # Use a generic sender address
-        msg['To'] = email
-
-        # Connect to the local SMTP server
+    def send_reset_code(self):
         try:
-            with smtplib.SMTP('localhost', 1025) as server:
-                server.send_message(msg)
-        except:
-            print("smtp server is offline")
 
-        print("Email sent to the local SMTP server for debugging.")
+            sender_email = "tayouritirosh@gmail.com"
+            app_password = "gyng opgk qpde hyge"  # Replace with your generated App Password
+            subject = "Password Reset Code"
+            body = f"Your password reset code is: {self.reset_code}"
 
-    def send_confirmation_code(self):
-        self.confirmation_code = str(random.randint(100000, 999999))
-        self.send_mail(self.email, self.confirmation_code)  # Assuming `send_mail` is a function you've defined
+            message = MIMEMultipart()
+            message["From"] = sender_email
+            message["To"] = self.email
+            message["Subject"] = subject
+            message.attach(MIMEText(body, "plain"))
+
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login(sender_email, app_password)
+                server.sendmail(sender_email, self.email, message.as_string())
+
+            print(f"Reset code sent to {self.email}. Check your email.")
+            response = {'message': 'Code sent successfully.'}
+            return response
+        except Exception as e:
+            print(f"Error sending email: {e}")
+            response = {'message': f'Failed to send reset code. Error: {str(e)}'}
+            return response
 
     def check_credentials(self):
         confirmation_input = self.confirmation_input.text().strip()
-        if self.confirmation_code == confirmation_input:
-            self.navigate_to(
-                ChangePasswordWindow)  # Assuming ChangePasswordWindow is another window for the actual password change
+        if self.reset_code == confirmation_input:
+            self.navigate_to(ChangePasswordWindow, email=self.email)
         else:
             print("Incorrect code")
 
@@ -247,8 +254,9 @@ class ForgotPassword2Window(BaseWindow):
 
 
 class ChangePasswordWindow(BaseWindow):
-    def __init__(self):
+    def __init__(self, email):
         super().__init__("Change password", "pictures\\changePassword.png")
+        self.email = email
         self.setup_buttons("Sign In", (660, 565), (375, 50), self.check_credentials)
         self.setup_buttons("Main", (996, 30), (250, 65), self.go_to_main)
 
@@ -290,7 +298,7 @@ class ChangePasswordWindow(BaseWindow):
         from hub import MainWindow
         self.navigate_to(MainWindow)
 
-    def check_credentials(self, email):
+    def check_credentials(self):
         # Get input values
         password = self.password_input.text()
         repeat_password = self.repeat_password_input.text()
@@ -305,7 +313,7 @@ class ChangePasswordWindow(BaseWindow):
             return
 
         # If all checks passed, proceed to the next window
-        is_changed, messege = userdatabase.change_password(email, password)
+        is_changed, messege = userdatabase.change_password(self.email, password)
         if is_changed:
             print(messege)
             self.navigate_to(SignInWindow)

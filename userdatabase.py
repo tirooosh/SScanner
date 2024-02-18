@@ -112,6 +112,15 @@ def get_user_details(email):
         return None, "User not found."
 
 
+def get_username(email):
+    """Fetch and return user details by email."""
+    conn = create_connection("usersTable.db")
+    cursor = conn.cursor()
+    query = "SELECT name FROM users WHERE email=?"
+    cursor.execute(query, (email,))
+    user_details = cursor.fetchone()
+    return user_details[0]
+
 # Main function to demonstrate functionality
 def main():
     setup_database()
@@ -122,18 +131,20 @@ def main():
     password = "123456"
     signup_status, message = signup(name, email, password)
     print(message)
-    print("current email and password: " + str(get_user_details(email)))
-
-    # Assume user logged in here and wants to change their password and name
-    new_password = "newpassword124"
-    change_password(email, new_password)
-
-    print("current email and password: "+str(get_user_details(email)))
+    # print("current email and password: " + str(get_user_details(email)))
+    #
+    # # Assume user logged in here and wants to change their password and name
+    # new_password = "newpassword124"
+    # change_password(email, new_password)
+    #
+    # print("current email and password: " + str(get_user_details(email)))
     # # Prompt for login with new credentials
     # email_input = input("Enter email: ")
     # password_input = input("Enter new password: ")  # Prompting for the new password
     # login_status, message = login(email_input, password_input)
     # print(message)
+
+    print(get_username(email))
 
 
 if __name__ == '__main__':
