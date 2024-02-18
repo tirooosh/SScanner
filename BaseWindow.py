@@ -85,12 +85,12 @@ class CustomTitleBar(QWidget):
     def onClose(self):
         self.window().close()
 
-    # def mousePressEvent(self, event):
-    #     x, y = event.x(), event.y()
-    #     if y < 20:
-    #         if event.button() == Qt.LeftButton:
-    #             self.parent().moving = True
-    #             self.parent().offset = event.pos()
+    def mousePressEvent(self, event):
+        x, y = event.x(), event.y()
+        if y < 20:
+            if event.button() == Qt.LeftButton:
+                self.parent().moving = True
+                self.parent().offset = event.pos()
 
     def mouseMoveEvent(self, event):
         x, y = event.x(), event.y()
