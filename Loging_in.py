@@ -164,26 +164,26 @@ class SignInWindow(BaseWindow):
 class ForgotPasswordWindow(BaseWindow):
     def __init__(self):
         super().__init__("Forgot password", "pictures\\forgotPassword.png")
-        self.setup_buttons("Next", (660, 565), (375, 50), self.check_credintials)
+
+        self.setup_buttons("Next", (660, 565), (375, 50), self.check_credentials)
         self.setup_buttons("Main", (996, 30), (250, 65), self.go_to_main)
 
-        # Email input field
         self.email_input = QLineEdit(self)
         self.email_input.setGeometry(621, 336, 423, 53)
-        self.email_input.setStyleSheet(
-            "QLineEdit {"
-            "   color: white;"  # Set text color to white
-            "   background-color: transparent;"
-            "   border: none;"  # Make border transparent
-            "   font-size: 18px;"
-            "}")
+        self.email_input.setStyleSheet("""
+            QLineEdit {
+                color: white;
+                background-color: transparent;
+                border: none;
+                font-size: 18px;
+            }""")
 
-    def check_credintials(self):
+    def check_credentials(self):
         email = self.email_input.text()
-        if userdatabase.email_exists(email):
-            self.navigate_to(ForgotPassword2Window)
+        if userdatabase.email_exists(email):  # Assuming `userdatabase` is a predefined object
+            self.navigate_to(ForgotPassword2Window, email=email)
         else:
-            print("not in system")
+            print("Email not in system")
 
     def go_to_main(self):
         from hub import MainWindow
@@ -193,43 +193,53 @@ class ForgotPasswordWindow(BaseWindow):
 class ForgotPassword2Window(BaseWindow):
     def __init__(self, email):
         super().__init__("Forgot password", "pictures\\forgotPassword2.png")
-        self.setup_buttons("Change Password", (660, 565), (375, 50), lambda: self.navigate_to(ChangePasswordWindow))
+        self.email = email
+        self.setup_ui()
+        self.send_confirmation_code()
+
+    def setup_ui(self):
+        self.setup_buttons("Change Password", (660, 565), (375, 50), self.check_credentials)
         self.setup_buttons("Main", (996, 30), (250, 65), self.go_to_main)
 
-        # confirmation code input field
         self.confirmation_input = QLineEdit(self)
         self.confirmation_input.setGeometry(621, 336, 423, 53)
-        self.confirmation_input.setStyleSheet(
-            "QLineEdit {"
-            "   color: white;"  # Set text color to white
-            "   background-color: transparent;"
-            "   border: none;"  # Make border transparent
-            "   font-size: 18px;"
-            "}")
-
-        self.confirmation_code = str(random.randint(100000, 999999))  # Convert code to string
-
-        self.send_mail(email, self.confirmation_code)
+        self.confirmation_input.setStyleSheet("""
+            QLineEdit {
+                color: white;
+                background-color: transparent;
+                border: none;
+                font-size: 18px;
+            }""")
 
     def send_mail(self, email, code):
         # Assuming a local SMTP debugging server is running
+        # python -m smtpd -c DebuggingServer -n localhost:1025
+
         msg = MIMEText("Your confirmation code is: " + code)
         msg['Subject'] = "Confirmation Code"
         msg['From'] = "no-reply@example.com"  # Use a generic sender address
         msg['To'] = email
 
         # Connect to the local SMTP server
-        with smtplib.SMTP('localhost', 1025) as server:
-            server.send_message(msg)
+        try:
+            with smtplib.SMTP('localhost', 1025) as server:
+                server.send_message(msg)
+        except:
+            print("smtp server is offline")
 
         print("Email sent to the local SMTP server for debugging.")
 
-    def check_credentials(self):  # Fixed typo in method name
-        confirmation_input = self.confirmation_input.text().strip()  # Strip whitespace
+    def send_confirmation_code(self):
+        self.confirmation_code = str(random.randint(100000, 999999))
+        self.send_mail(self.email, self.confirmation_code)  # Assuming `send_mail` is a function you've defined
+
+    def check_credentials(self):
+        confirmation_input = self.confirmation_input.text().strip()
         if self.confirmation_code == confirmation_input:
-            self.navigate_to(ChangePasswordWindow)
+            self.navigate_to(
+                ChangePasswordWindow)  # Assuming ChangePasswordWindow is another window for the actual password change
         else:
-            print("Wrong code")
+            print("Incorrect code")
 
     def go_to_main(self):
         from hub import MainWindow
@@ -295,5 +305,9 @@ class ChangePasswordWindow(BaseWindow):
             return
 
         # If all checks passed, proceed to the next window
-        if userdatabase.change_password(email, password):
-            self.navigate_to(PTestToolWindow)
+        is_changed, messege = userdatabase.change_password(email, password)
+        if is_changed:
+            print(messege)
+            self.navigate_to(SignInWindow)
+        else:
+            print(messege)

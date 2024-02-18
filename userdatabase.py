@@ -92,33 +92,49 @@ def change_name(email, new_name):
     conn.commit()
     return True, "Name changed successfully."
 
+
+def get_user_details(email):
+    """Fetch and return user details by email."""
+    conn = create_connection("usersTable.db")
+    cursor = conn.cursor()
+    query = "SELECT email, password, name FROM users WHERE email=?"
+    cursor.execute(query, (email,))
+    user_details = cursor.fetchone()
+
+    if user_details:
+        # user_details will be a tuple in the format (email, password, name)
+        return {
+                   "email": user_details[0],
+                   "password": user_details[1],
+                   "name": user_details[2]
+               }, "User details fetched successfully."
+    else:
+        return None, "User not found."
+
+
 # Main function to demonstrate functionality
 def main():
     setup_database()
 
     # Signup a new user
     name = "John Doe"
-    email = "john@example.com"
+    email = "johnT@example.com"
     password = "123456"
     signup_status, message = signup(name, email, password)
     print(message)
+    print("current email and password: " + str(get_user_details(email)))
 
     # Assume user logged in here and wants to change their password and name
-    new_password = "newpassword123"
-    new_name = "Jonathan Doe"
-    password_change_status, password_change_message = change_password(email, new_password)
-    print(password_change_message)
-    name_change_status, name_change_message = change_name(email, new_name)
-    print(name_change_message)
+    new_password = "newpassword124"
+    change_password(email, new_password)
 
+    print("current email and password: "+str(get_user_details(email)))
     # # Prompt for login with new credentials
     # email_input = input("Enter email: ")
     # password_input = input("Enter new password: ")  # Prompting for the new password
     # login_status, message = login(email_input, password_input)
     # print(message)
 
-    email_input = input("Enter email: ")
-    print(email_exists(email_input))
 
 if __name__ == '__main__':
     main()

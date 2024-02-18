@@ -40,11 +40,13 @@ class BaseWindow(QWidget):
         button.move(1240, 12)
         button.clicked.connect(self.close)
 
-    def navigate_to(self, window_class):
+    def navigate_to(self, window_class, *args, **kwargs):
         if window_class not in self.windows or not self.windows[window_class].isVisible():
-            self.windows[window_class] = window_class()
+            self.windows[window_class] = window_class(*args, **kwargs)
             self.windows[window_class].show()
-            self.close()
+        else:
+            self.windows[window_class].activateWindow()  # Bring the window to the front if it's already open
+        self.close()
 
     def setup_buttons(self, text, location, size, slot):
         button = QPushButton(text, self)
