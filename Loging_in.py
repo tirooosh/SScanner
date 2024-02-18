@@ -3,6 +3,8 @@ from PTestToolWindow import PTestToolWindow
 from PyQt5.QtWidgets import QLineEdit
 import re
 import userdatabase
+import random
+
 
 class SignUpWindow(BaseWindow):
     def __init__(self):
@@ -150,7 +152,7 @@ class SignInWindow(BaseWindow):
     def check_credentials(self):
         email = self.email_input.text()
         password = self.password_input.text()
-        can_login, str0 = userdatabase.login(email,password)
+        can_login, str0 = userdatabase.login(email, password)
         if can_login:
             self.navigate_to(PTestToolWindow)
         else:
@@ -176,7 +178,7 @@ class ForgotPasswordWindow(BaseWindow):
 
     def check_credintials(self):
         email = self.email_input.text()
-        if True:
+        if userdatabase.email_exists(email):
             self.navigate_to(ForgotPassword2Window)
         else:
             print("not in system")
@@ -187,7 +189,7 @@ class ForgotPasswordWindow(BaseWindow):
 
 
 class ForgotPassword2Window(BaseWindow):
-    def __init__(self):
+    def __init__(self, email):
         super().__init__("Forgot password", "pictures\\forgotPassword2.png")
         self.setup_buttons("Change Password", (660, 565), (375, 50), lambda: self.navigate_to(ChangePasswordWindow))
         self.setup_buttons("Main", (996, 30), (250, 65), self.go_to_main)
@@ -203,12 +205,34 @@ class ForgotPassword2Window(BaseWindow):
             "   font-size: 18px;"
             "}")
 
+        self.confirmation_code = random.randint(100000, 9999999)
+
+        def send_mail(email, code):
+            # python -m smtpd -c DebuggingServer -n localhost:1025
+            import smtplib
+            from email.mime.text import MIMEText
+
+            # Create a MIMEText object representing the email
+            msg = MIMEText("the code is: " + code)
+            msg['Subject'] = "confirmation code"
+            msg['From'] = "tayouritirosh@gmail.com"
+            msg['To'] = email
+
+            # Connect to the local SMTP server
+            with smtplib.SMTP('localhost', 1025) as server:
+                # Send the email - no login required for the local server
+                server.send_message(msg)
+
+            print("Email sent to the local SMTP server for debugging.")
+
+        send_mail(email, self.confirmation_code)
+
     def check_credintials(self):
-        confirmation_code = self.confirmation_input.text()
-        if True:
+        confirmation_input = self.confirmation_input.text()
+        if self.confirmation_code == confirmation_input:
             self.navigate_to(ChangePasswordWindow)
         else:
-            print("not in system")
+            print("wrong code")
 
     def go_to_main(self):
         from hub import MainWindow
