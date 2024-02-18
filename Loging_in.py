@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import QLineEdit
 import re
 import userdatabase
 import random
+import smtplib
+from email.mime.text import MIMEText
 
 
 class SignUpWindow(BaseWindow):
@@ -205,34 +207,29 @@ class ForgotPassword2Window(BaseWindow):
             "   font-size: 18px;"
             "}")
 
-        self.confirmation_code = random.randint(100000, 9999999)
+        self.confirmation_code = str(random.randint(100000, 999999))  # Convert code to string
 
-        def send_mail(email, code):
-            # python -m smtpd -c DebuggingServer -n localhost:1025
-            import smtplib
-            from email.mime.text import MIMEText
+        self.send_mail(email, self.confirmation_code)
 
-            # Create a MIMEText object representing the email
-            msg = MIMEText("the code is: " + code)
-            msg['Subject'] = "confirmation code"
-            msg['From'] = "tayouritirosh@gmail.com"
-            msg['To'] = email
+    def send_mail(self, email, code):
+        # Assuming a local SMTP debugging server is running
+        msg = MIMEText("Your confirmation code is: " + code)
+        msg['Subject'] = "Confirmation Code"
+        msg['From'] = "no-reply@example.com"  # Use a generic sender address
+        msg['To'] = email
 
-            # Connect to the local SMTP server
-            with smtplib.SMTP('localhost', 1025) as server:
-                # Send the email - no login required for the local server
-                server.send_message(msg)
+        # Connect to the local SMTP server
+        with smtplib.SMTP('localhost', 1025) as server:
+            server.send_message(msg)
 
-            print("Email sent to the local SMTP server for debugging.")
+        print("Email sent to the local SMTP server for debugging.")
 
-        send_mail(email, self.confirmation_code)
-
-    def check_credintials(self):
-        confirmation_input = self.confirmation_input.text()
+    def check_credentials(self):  # Fixed typo in method name
+        confirmation_input = self.confirmation_input.text().strip()  # Strip whitespace
         if self.confirmation_code == confirmation_input:
             self.navigate_to(ChangePasswordWindow)
         else:
-            print("wrong code")
+            print("Wrong code")
 
     def go_to_main(self):
         from hub import MainWindow

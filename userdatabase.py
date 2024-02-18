@@ -111,11 +111,14 @@ def main():
     name_change_status, name_change_message = change_name(email, new_name)
     print(name_change_message)
 
-    # Prompt for login with new credentials
+    # # Prompt for login with new credentials
+    # email_input = input("Enter email: ")
+    # password_input = input("Enter new password: ")  # Prompting for the new password
+    # login_status, message = login(email_input, password_input)
+    # print(message)
+
     email_input = input("Enter email: ")
-    password_input = input("Enter new password: ")  # Prompting for the new password
-    login_status, message = login(email_input, password_input)
-    print(message)
+    print(email_exists(email_input))
 
 if __name__ == '__main__':
     main()
