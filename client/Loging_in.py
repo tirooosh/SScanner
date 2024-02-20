@@ -2,11 +2,12 @@ from BaseWindow import BaseWindow
 from PTestToolWindow import PTestToolWindow
 from PyQt5.QtWidgets import QLineEdit
 import re
-import userdatabase
+import client
 import random
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
 
 class SignUpWindow(BaseWindow):
     def __init__(self):
@@ -97,7 +98,7 @@ class SignUpWindow(BaseWindow):
             return
 
         # If all checks passed, proceed to the next window
-        if userdatabase.signup(name, email, password):
+        if client.signup(name, email, password):
             self.navigate_to(PTestToolWindow, email=email)
 
     def is_valid_email(self, email):
@@ -154,7 +155,7 @@ class SignInWindow(BaseWindow):
     def check_credentials(self):
         email = self.email_input.text()
         password = self.password_input.text()
-        can_login, str0 = userdatabase.login(email, password)
+        can_login, str0 = client.login(email, password)
         if can_login:
             self.navigate_to(PTestToolWindow, email=email)
         else:
@@ -180,7 +181,7 @@ class ForgotPasswordWindow(BaseWindow):
 
     def check_credentials(self):
         email = self.email_input.text()
-        if userdatabase.email_exists(email):  # Assuming `userdatabase` is a predefined object
+        if client.email_exists(email):  # Assuming `userdatabase` is a predefined object
             self.navigate_to(ForgotPassword2Window, email=email)
         else:
             print("Email not in system")
@@ -313,7 +314,7 @@ class ChangePasswordWindow(BaseWindow):
             return
 
         # If all checks passed, proceed to the next window
-        is_changed, messege = userdatabase.change_password(self.email, password)
+        is_changed, messege = client.change_password(self.email, password)
         if is_changed:
             print(messege)
             self.navigate_to(SignInWindow)

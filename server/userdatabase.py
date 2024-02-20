@@ -48,7 +48,7 @@ def signup(name, email, password):
     insert_sql = '''INSERT INTO users(name, email, password) VALUES(?,?,?)'''
     cursor.execute(insert_sql, (name, email, password))
     conn.commit()
-    return True, "User created successfully."
+    return True
 
 
 def login(email, password):
@@ -58,9 +58,9 @@ def login(email, password):
     cursor.execute(query, (email, password))
     record = cursor.fetchone()
     if record:
-        return True, "Login successful."
+        return True
     else:
-        return False, "Login failed. Incorrect email or password."
+        return False
 
 
 def email_exists(email):
@@ -79,7 +79,7 @@ def change_password(email, new_password):
     update_sql = "UPDATE users SET password = ? WHERE email = ?"
     cursor.execute(update_sql, (new_password, email))
     conn.commit()
-    return True, "Password changed successfully."
+    return True
 
 
 def change_name(email, new_name):
@@ -90,7 +90,7 @@ def change_name(email, new_name):
     update_sql = "UPDATE users SET name = ? WHERE email = ?"
     cursor.execute(update_sql, (new_name, email))
     conn.commit()
-    return True, "Name changed successfully."
+    return True
 
 
 def get_user_details(email):
@@ -107,9 +107,9 @@ def get_user_details(email):
                    "email": user_details[0],
                    "password": user_details[1],
                    "name": user_details[2]
-               }, "User details fetched successfully."
+               }
     else:
-        return None, "User not found."
+        return None
 
 
 def get_username(email):

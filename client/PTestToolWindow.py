@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QLabel
 from hub import AboutWindow, MainWindow
-import userdatabase
+import client
 from BaseWindow import BaseWindow
 from PyQt5.QtWidgets import QLineEdit
 
@@ -17,7 +17,7 @@ class PTestToolWindow(BaseWindow):
                            self.Ptest)  # Assuming this is a placeholder for a future feature
 
         # Fetch the client's name using the provided email
-        client_name = userdatabase.get_username(email)
+        client_name = client.get_username(email)
 
         # Create and configure the label to display the client's name
         self.client_name_label = QLabel(self)
