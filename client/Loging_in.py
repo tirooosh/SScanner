@@ -77,13 +77,11 @@ class SignUpWindow(BaseWindow):
             self.password_input.setEchoMode(QLineEdit.Password)
 
     def check_credentials(self):
-        # Get input values
         name = self.name_input.text()
         email = self.email_input.text()
         password = self.password_input.text()
         repeat_password = self.repeat_password_input.text()
 
-        # Validate email
         if not self.is_valid_email(email):
             print("Invalid email")
             return
@@ -92,14 +90,16 @@ class SignUpWindow(BaseWindow):
             print("Weak password")
             return
 
-        # Check if passwords match
         if password != repeat_password:
             print("Passwords do not match")
             return
 
-        # If all checks passed, proceed to the next window
-        if client.signup(name, email, password):
-            self.navigate_to(PTestToolWindow, email=email)
+        try:
+            success = client.signup(name, email, password)
+            if success:
+                self.navigate_to(PTestToolWindow, email=email)
+        except Exception as e:
+            print(f"Error during signup: {e}")
 
     def is_valid_email(self, email):
         # Basic email validation using regular expression
@@ -155,11 +155,14 @@ class SignInWindow(BaseWindow):
     def check_credentials(self):
         email = self.email_input.text()
         password = self.password_input.text()
-        can_login, str0 = client.login(email, password)
-        if can_login:
-            self.navigate_to(PTestToolWindow, email=email)
-        else:
-            print("not valid")
+        try:
+            can_login = client.login(email, password)
+            if can_login:
+                self.navigate_to(PTestToolWindow, email=email)
+            else:
+                print("not valid")
+        except Exception as e:
+            print(f"Error during login: {e}")
 
 
 class ForgotPasswordWindow(BaseWindow):
@@ -181,10 +184,13 @@ class ForgotPasswordWindow(BaseWindow):
 
     def check_credentials(self):
         email = self.email_input.text()
-        if client.email_exists(email):  # Assuming `userdatabase` is a predefined object
-            self.navigate_to(ForgotPassword2Window, email=email)
-        else:
-            print("Email not in system")
+        try:
+            if client.email_exists(email):
+                self.navigate_to(ForgotPassword2Window, email=email)
+            else:
+                print("Email not in system")
+        except Exception as e:
+            print(f"Error checking email: {e}")
 
     def go_to_main(self):
         from hub import MainWindow
@@ -300,7 +306,6 @@ class ChangePasswordWindow(BaseWindow):
         self.navigate_to(MainWindow)
 
     def check_credentials(self):
-        # Get input values
         password = self.password_input.text()
         repeat_password = self.repeat_password_input.text()
 
@@ -308,15 +313,17 @@ class ChangePasswordWindow(BaseWindow):
             print("Weak password")
             return
 
-        # Check if passwords match
         if password != repeat_password:
             print("Passwords do not match")
             return
 
-        # If all checks passed, proceed to the next window
-        is_changed, messege = client.change_password(self.email, password)
-        if is_changed:
-            print(messege)
-            self.navigate_to(SignInWindow)
-        else:
-            print(messege)
+        try:
+            is_changed, message = client.change_password(self.email, password)
+            if is_changed:
+                print(message)
+                self.navigate_to(SignInWindow)
+            else:
+                print(message)
+        except Exception as e:
+            print(f"Error changing password: {e}")
+

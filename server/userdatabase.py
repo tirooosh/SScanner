@@ -40,27 +40,54 @@ def setup_database():
 # User management
 def signup(name, email, password):
     conn = create_connection("usersTable.db")
-    cursor = conn.cursor()
-    query = "SELECT * FROM users WHERE email=?"
-    cursor.execute(query, (email,))
-    if cursor.fetchone():
-        return False, "Email already exists."
-    insert_sql = '''INSERT INTO users(name, email, password) VALUES(?,?,?)'''
-    cursor.execute(insert_sql, (name, email, password))
-    conn.commit()
-    return True
+    try:
+        cursor = conn.cursor()
+        query = "SELECT * FROM users WHERE email=?"
+        cursor.execute(query, (email,))
+        if cursor.fetchone():
+            return False, "Email already exists."
+        insert_sql = '''INSERT INTO users(name, email, password) VALUES(?,?,?)'''
+        cursor.execute(insert_sql, (name, email, password))
+        conn.commit()
+        return True, "Signup successful."
+    except sqlite3.Error as e:
+        print(e)
+        return False, "Failed to sign up."
+    finally:
+        if conn:
+            conn.close()
 
 
 def login(email, password):
     conn = create_connection("usersTable.db")
-    cursor = conn.cursor()
-    query = "SELECT * FROM users WHERE email=? AND password=?"
-    cursor.execute(query, (email, password))
-    record = cursor.fetchone()
-    if record:
-        return True
-    else:
-        return False
+    try:
+        cursor = conn.cursor()
+        query = "SELECT * FROM users WHERE email=? AND password=?"
+        cursor.execute(query, (email, password))
+        record = cursor.fetchone()
+        if record:
+            return True, "Login successful."
+        else:
+            return False, "Login failed."
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_username(email):
+    conn = create_connection("usersTable.db")
+    try:
+        cursor = conn.cursor()
+        query = "SELECT name FROM users WHERE email=?"
+        cursor.execute(query, (email,))
+        user_details = cursor.fetchone()
+        if user_details:
+            return user_details[0]  # Now correctly handles case where user is not found
+        else:
+            return None, "User not found."
+    finally:
+        if conn:
+            conn.close()
 
 
 def email_exists(email):
@@ -104,22 +131,13 @@ def get_user_details(email):
     if user_details:
         # user_details will be a tuple in the format (email, password, name)
         return {
-                   "email": user_details[0],
-                   "password": user_details[1],
-                   "name": user_details[2]
-               }
+            "email": user_details[0],
+            "password": user_details[1],
+            "name": user_details[2]
+        }
     else:
         return None
 
-
-def get_username(email):
-    """Fetch and return user details by email."""
-    conn = create_connection("usersTable.db")
-    cursor = conn.cursor()
-    query = "SELECT name FROM users WHERE email=?"
-    cursor.execute(query, (email,))
-    user_details = cursor.fetchone()
-    return user_details[0]
 
 # Main function to demonstrate functionality
 def main():

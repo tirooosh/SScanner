@@ -1,14 +1,14 @@
 import socket
 import json  # Import json module for parsing JSON responses
 
-ip = "127.0.0.1"
-port = 8821
+IP = "127.0.0.1"
+PORT = 8821
 MAX_MSG_SIZE = 1024
 
 
 def send_request_and_get_response(request_message):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
-        my_socket.sendto(request_message.encode(), (ip, port))
+        my_socket.sendto(request_message.encode(), (IP, PORT))
         response, _ = my_socket.recvfrom(MAX_MSG_SIZE)
     return json.loads(response.decode())
 
@@ -50,3 +50,9 @@ def get_username(email):
 def email_exists(email):
     response = send_request_and_get_response(f"CHECK_EMAIL {email}")
     return response.get("exists", False)
+
+if __name__ == '__main__':
+    name = "tirosh"
+    email = "tiroshtayouri@gmail.com"
+    password = "tirosh45"
+    print(get_username(email))

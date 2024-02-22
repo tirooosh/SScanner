@@ -41,11 +41,11 @@ while True:
         my_socket.sendto(payload.encode(), client_address)
     elif cmd == 'GET_USER_DETAILS' and len(parts) == 2:
         email = parts[1]
-        details, message = userdatabase.get_user_details(email)
+        details = userdatabase.get_user_details(email)
         if details:
             response = json.dumps({"success": True, "details": details})
         else:
-            response = json.dumps({"success": False, "message": message})
+            response = json.dumps({"success": False})
         my_socket.sendto(response.encode(), client_address)
     elif cmd == 'CHANGE_PASSWORD' and len(parts) == 3:
         email, new_password = parts[1], parts[2]
