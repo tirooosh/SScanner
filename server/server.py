@@ -1,7 +1,7 @@
 import socket
 import userdatabase
 import json  # Import json module for parsing JSON responses
-
+from datetime import datetime
 
 # Server details
 ip = "127.0.0.1"
@@ -18,7 +18,7 @@ while True:
     # Receive request from the client
     request, client_address = my_socket.recvfrom(MAX_MSG_SIZE)
     request = request.decode().strip()  # Convert the request to string and trim whitespaces
-    print(f"Client sent: {request}")
+    print(f"Client sent: {request} at: {datetime.now().strftime('%H:%M:%S')}")
 
     # Parse the request
     parts = request.split(' ')
@@ -26,35 +26,40 @@ while True:
 
     # Processing commands
     if cmd == 'EXIT':
-        my_socket.sendto("Goodbye!".encode(), client_address)
+        payload = json.dumps({"success": True, "message": "Goodbye!"})
+        my_socket.sendto(payload.encode(), client_address)
         break
     elif cmd == 'LOGIN' and len(parts) == 3:
         email, password = parts[1], parts[2]
         success = userdatabase.login(email, password)
-        my_socket.sendto(success.encode(), client_address)
+        payload = json.dumps({'success': success})
+        my_socket.sendto(payload.encode(), client_address)
     elif cmd == 'SIGNUP' and len(parts) == 4:
         name, email, password = parts[1], parts[2], parts[3]
         success = userdatabase.signup(name, email, password)
-        my_socket.sendto(success.encode(), client_address)
-        # Inside the server loop, adjust the response construction:
-
+        payload = json.dumps({'success': success})
+        my_socket.sendto(payload.encode(), client_address)
     elif cmd == 'GET_USER_DETAILS' and len(parts) == 2:
         email = parts[1]
         details, message = userdatabase.get_user_details(email)
         if details:
-            response = json.dumps({"success": True, "name": details['name'], "email": details['email']})
+            response = json.dumps({"success": True, "details": details})
         else:
             response = json.dumps({"success": False, "message": message})
         my_socket.sendto(response.encode(), client_address)
-
-    elif cmd == 'CHANGE_PASSWORD' and len(parts) == 3:  # Assuming correct format now includes old_password
+    elif cmd == 'CHANGE_PASSWORD' and len(parts) == 3:
         email, new_password = parts[1], parts[2]
         success = userdatabase.change_password(email, new_password)
-        my_socket.sendto(success.encode(), client_address)
+        payload = json.dumps({'success': success})
+        my_socket.sendto(payload.encode(), client_address)
     elif cmd == 'GET_USERNAME' and len(parts) == 2:
         email = parts[1]
         name = userdatabase.get_username(email)
-        my_socket.sendto(name.encode(), client_address)
+        if name:
+            response = json.dumps({"success": True, "name": name})
+        else:
+            response = json.dumps({"success": False, "message": "User not found"})
+        my_socket.sendto(response.encode(), client_address)
     else:
         response = json.dumps({"success": False, "message": "Unknown or malformed request"})
         my_socket.sendto(response.encode(), client_address)
