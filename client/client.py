@@ -42,9 +42,8 @@ def get_user_details(email):
 
 def get_username(email):
     response = send_request_and_get_response(f"GET_USERNAME {email}")
-    # Depending on how you want to handle the response, you might directly return it
-    # or extract specific fields like success or username
-    return response.get("username", "")
+    print(response.get("success"))
+    return response.get("name", "")
 
 
 def email_exists(email):

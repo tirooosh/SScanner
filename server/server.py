@@ -33,6 +33,7 @@ while True:
         email, password = parts[1], parts[2]
         success = userdatabase.login(email, password)
         payload = json.dumps({'success': success})
+        print("sent "+payload)
         my_socket.sendto(payload.encode(), client_address)
     elif cmd == 'SIGNUP' and len(parts) == 4:
         name, email, password = parts[1], parts[2], parts[3]
@@ -43,6 +44,7 @@ while True:
         email = parts[1]
         details = userdatabase.get_user_details(email)
         if details:
+            print("sent " + details)
             response = json.dumps({"success": True, "details": details})
         else:
             response = json.dumps({"success": False})
@@ -59,7 +61,19 @@ while True:
             response = json.dumps({"success": True, "name": name})
         else:
             response = json.dumps({"success": False, "message": "User not found"})
+        print(response)
         my_socket.sendto(response.encode(), client_address)
+    elif cmd == 'CHECK_EMAIL' and len(parts) == 2:
+        email = parts[1]
+        exists = userdatabase.email_exists(email)
+        payload = json.dumps({'exists': exists})
+        print("sent " + payload)
+        my_socket.sendto(payload.encode(), client_address)
+    elif cmd == 'CHANGE_NAME' and len(parts) == 3:
+        email, new_name = parts[1], parts[2]
+        success = userdatabase.change_name(email, new_name)
+        payload = json.dumps({'success': success})
+        my_socket.sendto(payload.encode(), client_address)
     else:
         response = json.dumps({"success": False, "message": "Unknown or malformed request"})
         my_socket.sendto(response.encode(), client_address)

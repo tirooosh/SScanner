@@ -94,6 +94,13 @@ class SignUpWindow(BaseWindow):
             print("Passwords do not match")
             return
 
+        if len(name) <10:
+            print("the username is too long")
+
+        for i in password:
+            if i == " ":
+                print("password cannot contain spaces")
+
         try:
             success = client.signup(name, email, password)
             if success:
@@ -156,7 +163,7 @@ class SignInWindow(BaseWindow):
         email = self.email_input.text()
         password = self.password_input.text()
         try:
-            can_login = client.login(email, password)
+            can_login, message = client.login(email, password)
             if can_login:
                 self.navigate_to(PTestToolWindow, email=email)
             else:
@@ -185,7 +192,8 @@ class ForgotPasswordWindow(BaseWindow):
     def check_credentials(self):
         email = self.email_input.text()
         try:
-            if client.email_exists(email):
+            exist = client.email_exists(email)
+            if exist:
                 self.navigate_to(ForgotPassword2Window, email=email)
             else:
                 print("Email not in system")
@@ -225,7 +233,7 @@ class ForgotPassword2Window(BaseWindow):
         try:
 
             sender_email = "tayouritirosh@gmail.com"
-            app_password = "gyng opgk qpde hyge"  # Replace with your generated App Password
+            app_password = "gyng opgk qpde hyge"  # generated App Password
             subject = "Password Reset Code"
             body = f"Your password reset code is: {self.reset_code}"
 
@@ -318,12 +326,12 @@ class ChangePasswordWindow(BaseWindow):
             return
 
         try:
-            is_changed, message = client.change_password(self.email, password)
+            is_changed = client.change_password(self.email, password)
             if is_changed:
-                print(message)
+                print("sucssesfull")
                 self.navigate_to(SignInWindow)
             else:
-                print(message)
+                print("oopsy")
         except Exception as e:
             print(f"Error changing password: {e}")
 
