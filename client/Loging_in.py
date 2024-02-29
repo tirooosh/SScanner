@@ -82,24 +82,45 @@ class SignUpWindow(BaseWindow):
         password = self.password_input.text()
         repeat_password = self.repeat_password_input.text()
 
-        if not self.is_valid_email(email):
-            print("Invalid email")
-            return
+        def is_valid_email(email):
+            # Simple regex for validating an Email
+            pattern = r'^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
+            return re.match(pattern, email) is not None
 
-        if len(password) < 6:
-            print("Weak password")
-            return
+        # Check for a valid email
+        if not is_valid_email(email):
+            print("Invalid email format.")
+            return False
 
+        # Password length check
+        if len(password) < 8:
+            print("Password must be at least 8 characters.")
+            return False
+
+        # Password complexity check
+        if not re.search("[a-z]", password) or not re.search("[A-Z]", password) or not re.search("[0-9]",
+                                                                                                 password) or not re.search(
+            "[_@$]", password):
+            print("Password must contain lowercase, uppercase, numeric, and special characters (_, @, $).")
+            return False
+
+        # Passwords match check
         if password != repeat_password:
-            print("Passwords do not match")
-            return
+            print("Passwords do not match.")
+            return False
 
-        if len(name) <10:
-            print("the username is too long")
+        # Username length check
+        if len(name) < 2 or len(name) > 20:
+            print("The username must be between 2 and 20 characters.")
+            return False
 
-        for i in password:
-            if i == " ":
-                print("password cannot contain spaces")
+        # Password space check
+        if " " in password:
+            print("Password cannot contain spaces.")
+            return False
+
+        # If all checks passed
+        print("All inputs are valid.")
 
         try:
             success = client.signup(name, email, password)
@@ -107,11 +128,6 @@ class SignUpWindow(BaseWindow):
                 self.navigate_to(PTestToolWindow, email=email)
         except Exception as e:
             print(f"Error during signup: {e}")
-
-    def is_valid_email(self, email):
-        # Basic email validation using regular expression
-        email_regex = re.compile(r"[^@]+@[^@]+\.[^@]+")
-        return bool(re.match(email_regex, email))
 
 
 class SignInWindow(BaseWindow):
@@ -334,4 +350,3 @@ class ChangePasswordWindow(BaseWindow):
                 print("oopsy")
         except Exception as e:
             print(f"Error changing password: {e}")
-
