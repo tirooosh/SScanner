@@ -9,7 +9,8 @@ def is_vulnerable_to_sqli(url):
         '--level', '1',
         '--risk', '3',
         '--output-dir', '/tmp',
-        '--flush-session'
+        '--flush-session',
+        '--forms',
     ]
 
     try:
@@ -41,6 +42,5 @@ def is_vulnerable_to_sqli(url):
 
 
 if __name__ == '__main__':
-    url_to_test = "http://testphp.vulnweb.com/artists.php?artist=1"
+    url_to_test = "http://altoro.testfire.net/login.jsp"
     vulnerable = is_vulnerable_to_sqli(url_to_test)
-    print("Vulnerable:" if vulnerable else "Not vulnerable.")

