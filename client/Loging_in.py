@@ -100,8 +100,8 @@ class SignUpWindow(BaseWindow):
         # Password complexity check
         if not re.search("[a-z]", password) or not re.search("[A-Z]", password) or not re.search("[0-9]",
                                                                                                  password) or not re.search(
-            "[_@$]", password):
-            print("Password must contain lowercase, uppercase, numeric, and special characters (_, @, $).")
+            "[_@$!#%*]", password):
+            print("Password must contain lowercase, uppercase, numeric, and special characters (_, @, $, !, #, etc...).")
             return False
 
         # Passwords match check
