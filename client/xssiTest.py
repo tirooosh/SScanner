@@ -6,6 +6,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementNotInteractableException
 import time
+from selenium.common.exceptions import UnexpectedAlertPresentException
+from selenium.webdriver.support.expected_conditions import alert_is_present
 
 
 def find_search_bar(browser, url, method=None):
@@ -66,16 +68,36 @@ def try_find_search_bar(browser, method, value):
 
 
 def analyze_response(browser, payload):
-    alert_text = "XSS"
-    if alert_text.lower() in browser.page_source.lower():
-        return True, f"Potential XSS vulnerability detected with payload {payload}"
+    try:
+        # Wait up to 5 seconds for an alert to appear
+        WebDriverWait(browser, 5).until(alert_is_present())
+        alert = browser.switch_to.alert
+        alert_text = alert.text
+        alert.accept()  # Dismiss the alert
+        return True, f"Alert triggered with text: {alert_text}, payload: {payload}"
+
+    except TimeoutException:
+        # No alert was triggered within 5 seconds
+        pass
+    except UnexpectedAlertPresentException as e:
+        # If there is any other issue with the alert
+        print(f"Unexpected alert present: {e}")
+        alert = browser.switch_to.alert
+        alert.accept()
+        return True, f"Handled unexpected alert with text: {alert.text}, payload: {payload}"
+
+    except Exception as e:
+        print(f"Error during response analysis: {e}")
+        return False, "Error handling response."
+
+    # Additional checks for XSS can go here, as needed
     return False, "No clear vulnerability detected based on response."
 
 
 def test_xss_payloads(browser, url, search_bar):
     xss_payloads = [
-        # '<script>alert("XSS")</script>',
-        # '"><script>alert("XSS")</script>',
+        '<script>alert("XSS")</script>',
+        '"><script>alert("XSS")</script>',
         '"><img src="invalid" onerror="alert(\'XSS\')">',
         'javascript:alert("XSS");',
         '<svg/onload=alert("XSS")>',
@@ -92,7 +114,7 @@ def test_xss_payloads(browser, url, search_bar):
         try:
             search_bar.clear()
             search_bar.send_keys(payload + Keys.ENTER)
-            time.sleep(5)
+            time.sleep(5)  # Allow page to load and script to execute if any
             vulnerable, result_message = analyze_response(browser, payload)
             results.append((payload, result_message))
             if vulnerable:
@@ -126,5 +148,5 @@ def check_xss_in_searchbar(url):
 
 
 if __name__ == '__main__':
-    url = "https://xss-quiz.int21h.jp"  # Replace with the actual URL
-    check_xss_in_searchbar(url)
+    url = ["https://xss-quiz.int21h.jp", "http://sudo.co.il/xss/level1.php"]  # Replace with the actual URL
+    check_xss_in_searchbar(url[1])
