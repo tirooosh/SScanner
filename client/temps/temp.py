@@ -2,87 +2,77 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-def request_session(user_agent="Mozilla/5.0"):
-    session = requests.Session()
-    session.headers['User-Agent'] = user_agent
-    return session
+# Initialize session
+s = requests.Session()
+s.headers[
+    "User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
 
-def find_forms(html):
-    soup = BeautifulSoup(html, "html.parser")
-    return soup.find_all("form")
+
+def get_forms(url):
+    """ Retrieve all forms from the webpage """
+    try:
+        response = s.get(url)
+        response.raise_for_status()  # Check for HTTP request errors
+        soup = BeautifulSoup(response.content, "html.parser")
+        return soup.find_all("form")
+    except requests.RequestException as e:
+        print(f"Error fetching {url}: {e}")
+        return []
+
 
 def form_details(form):
+    """ Extract details from the form """
     details = {
-        "action": form.attrs.get("action", "").lower(),
-        "method": form.attrs.get("method", "get").lower(),
-        "inputs": []
+        'action': form.attrs.get("action", ""),
+        'method': form.attrs.get("method", "get").lower(),
+        'inputs': [{
+            "type": input_tag.attrs.get("type", "text"),
+            "name": input_tag.attrs.get("name"),
+            "value": input_tag.attrs.get("value", "")
+        } for input_tag in form.find_all("input")]
     }
-    form_fields = form.find_all(['input', 'textarea', 'select'])
-    for field in form_fields:
-        if field.name:
-            input_details = {
-                "type": field.attrs.get("type", "text"),
-                "name": field.name,
-                "value": field.attrs.get("value", "")
-            }
-            if field.name and field.name not in [input['name'] for input in details['inputs']]:
-                details["inputs"].append(input_details)
     return details
 
 
-def is_vulnerable(response):
-    error_messages = [
-        "you have an error in your sql syntax;",
-        "warning: mysql",
-        "unclosed quotation mark after the character string",
+def vulnerable(response):
+    """ Check if the response contains SQL error messages """
+    errors = {
         "quoted string not properly terminated",
-    ]
-    return any(error in response.text.lower() for error in error_messages)
+        "unclosed quotation mark after the character string",
+        "you have an error in your SQL syntax"
+    }
+    content = response.content.decode().lower()
+    return any(error in content for error in errors)
 
-def scan_sql_injection(url, session):
-    print(f"Testing URL: {url}")
 
-    # Test vulnerability in the URL
-    if is_sql_injection_vulnerable_by_url(url, session):
-        print("SQL Injection vulnerability detected in URL.")
+def sql_injection_scan(url):
+    """ Scan each form for SQL injection vulnerabilities """
+    forms = get_forms(url)
+    print(f"[+] Detected {len(forms)} forms on {url}.")
 
-    # Test the forms on the page
-    try:
-        response = session.get(url)
-        forms = find_forms(response.text)
-        print(f"Found {len(forms)} forms on {url}.")
-        for form in forms:
-            form_info = form_details(form)
-            content_type = response.headers.get('Content-Type')
-            if is_vulnerable_form(url, form_info, session, content_type):
-                print(f"SQL Injection vulnerability detected in form on {url}")
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching the URL: {e}")
+    for form in forms:
+        details = form_details(form)
+        for i in "\"'":
+            data = {}
+            for input_tag in details["inputs"]:
+                if input_tag["type"] == "hidden" or input_tag["value"]:
+                    data[input_tag['name']] = input_tag["value"] + i
+                elif input_tag["type"] != "submit":
+                    data[input_tag['name']] = f"test{i}"
+            target_url = urljoin(url, details["action"])
+            try:
+                if details["method"] == "post":
+                    res = s.post(target_url, data=data)
+                else:
+                    res = s.get(target_url, params=data)
+                if vulnerable(res):
+                    print(f"SQL injection vulnerability detected in form at {target_url}")
+                else:
+                    print("No SQL injection vulnerability detected.")
+            except requests.RequestException as e:
+                print(f"Request to {target_url} failed: {e}")
 
-def is_vulnerable_form(base_url, form, session, content_type):
-    action = urljoin(base_url, form['action'])
-    data = {}
-    for input in form['inputs']:
-        data[input['name']] = "test" + "'"
-    if form['method'] == 'post':
-        res = session.post(action, data=data)
-    else:
-        res = session.get(action, params=data)
-    return is_vulnerable(res)
-
-def is_sql_injection_vulnerable_by_url(url, session):
-    payloads = ["'", '"', '--', '#', ' OR 1=1']
-    for payload in payloads:
-        test_url = f"{url}{payload}"
-        try:
-            response = session.get(test_url)
-            if is_vulnerable(response):
-                return True
-        except requests.exceptions.RequestException as e:
-            print(f"Failed to send request: {e}")
-    return False
 
 if __name__ == "__main__":
     test_url = "http://testphp.vulnweb.com/artists.php?artist=1"
-    session = request_session()
-    scan_sql_injection(test_url, session)
+    sql_injection_scan(test_url)
