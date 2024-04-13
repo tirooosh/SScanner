@@ -315,7 +315,20 @@ def sql_injection_scan(url):
                 print(f"Request to {target_url} failed: {e}")
 
 
+def run_tests(test_url):
+    session = request_session()
+    sql_injection_scan(test_url)
+    scan_sql_injection(test_url, session)
+    check_sqli_in_searchbar(test_url)
+    sqlmapchecker.is_vulnerable_to_sqli(test_url)
+
+
 if __name__ == '__main__':
+    test_url = ["http://testphp.vulnweb.com/artists.php?artist=1",
+                "https://demo.testfire.net"]
+
+    run_tests(test_url)
+
     """Selenium-Based Search Bar SQL Injection Test (check_sqli_in_searchbar):
     Purpose: To detect SQL Injection vulnerabilities through a web page's search bar using automated browser interactions.
     Method: Uses Selenium WebDriver to navigate the web page, identify a search bar, and inject SQL payloads. It checks for typical SQL error responses or unusual behaviors (like delays) that indicate SQL Injection vulnerabilities.
@@ -333,12 +346,3 @@ if __name__ == '__main__':
     External SQLMap Check (sqlmapchecker.is_vulnerable_to_sqli):
     Purpose: To use an external tool or module, presumably named sqlmapchecker, which could be an abstraction over the popular SQLMap tool used for detecting and exploiting SQL Injection flaws.
     Method: This likely sends various types of SQL injection payloads through the given URL and observes the responses, leveraging SQLMap's extensive database and techniques for SQL Injection."""
-
-    test_url = ["http://testphp.vulnweb.com/artists.php?artist=1",
-                "https://demo.testfire.net"]
-
-    session = request_session()
-    sql_injection_scan(test_url[0])
-    scan_sql_injection(test_url[0], session)
-    check_sqli_in_searchbar(test_url[0])
-    sqlmapchecker.is_vulnerable_to_sqli(test_url[0])

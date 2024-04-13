@@ -141,13 +141,15 @@ def check_xss_in_searchbar(url):
         if search_bar:
             results, found = test_xss_payloads(browser, search_bar)
             if found:
-                print("XSS vulnerability detected")
+                return True
             else:
-                print("No XSS vulnerability detected.")
+                return False
         else:
             print("Search bar not found.")
+            return False
     except Exception as e:
         print(f"An unexpected error occurred: {str(e)}")
+        return False
     finally:
         browser.quit()
 
@@ -203,12 +205,20 @@ def scan_xss_vulnerability(url):
             form_info = input_field_details(form)
             if test_xss_injection(url, form_info, session):
                 print(f"XSS vulnerability detected")
+                return True
     except requests.exceptions.RequestException as e:
         print(f"Error fetching the URL: {e}")
+        return False
+
+
+def run_tests(url):
+    results = {"test1": False, "test2": False}
+    results["test1"] = scan_xss_vulnerability(url)
+    results["test2"] = check_xss_in_searchbar(url)
+    return results
+
 
 
 if __name__ == '__main__':
-    url = ["https://xss-quiz.int21h.jp", "http://sudo.co.il/xss/level4.php",
-           "https://www.youtube.com"]  # Replace with the actual URL
-    scan_xss_vulnerability(url[1])
-    check_xss_in_searchbar(url[1])
+    urls = ["https://xss-quiz.int21h.jp", "http://sudo.co.il/xss/level4.php"]
+    run_tests(urls[2])

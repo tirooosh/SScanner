@@ -11,7 +11,7 @@ class PTestToolWindow(BaseWindow):
         self.setup_buttons("About", (878, 74), (70, 20), lambda: self.navigate_to(AboutWindow))
         self.setup_buttons("History", (711, 74), (142, 20), lambda: self.navigate_to(
             AboutWindow))  # Assuming this should navigate to a HistoryWindow instead
-        self.setup_buttons("SignIn", (613, 74), (85, 20), lambda: self.navigate_to(
+        self.setup_buttons("main", (613, 74), (85, 20), lambda: self.navigate_to(
             MainWindow))  # Assuming this is for logout, consider renaming the button
         self.setup_buttons("search", (1035, 377), (50, 50),
                            self.Ptest)  # Assuming this is a placeholder for a future feature
@@ -41,5 +41,25 @@ class PTestToolWindow(BaseWindow):
             "   font-size: 18px;"
             "}")
 
+
+    def show_results(self, sqlResults, xssResults):
+        import resultWindow
+        pass
+
     def Ptest(self):
-        adress = self.site_input.text()
+        import sqlitest, xssiTest
+        url = self.site_input.text()  # Get the text from QLineEdit
+        if self.validate_url(url):
+            sqlResults = sqlitest.run_tests(url)
+            xssResults = xssiTest.run_tests(url)
+
+            self.show_results(sqlResults, xssResults)
+        else:
+            print("Invalid URL")  # You might want to show this message in the GUI instead
+
+
+    def validate_url(self, url):
+        # Simple validation check, can be expanded based on requirements
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        return bool(parsed.scheme) and bool(parsed.netloc)
