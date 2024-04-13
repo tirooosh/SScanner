@@ -141,8 +141,10 @@ def check_xss_in_searchbar(url):
         if search_bar:
             results, found = test_xss_payloads(browser, search_bar)
             if found:
+                print(f"XSS vulnerability detected")
                 return True
             else:
+                print(f"XSS vulnerability isnt found")
                 return False
         else:
             print("Search bar not found.")
@@ -212,13 +214,16 @@ def scan_xss_vulnerability(url):
 
 
 def run_tests(url):
-    results = {"test1": False, "test2": False}
-    results["test1"] = scan_xss_vulnerability(url)
-    results["test2"] = check_xss_in_searchbar(url)
+    results = {"test2":0}
+    results_test1 = scan_xss_vulnerability(url)
+    results_test2 = check_xss_in_searchbar(url)
+    if results_test1:
+        results["test2"]+=1
+    if results_test2:
+        results["test2"] += 1
     return results
-
 
 
 if __name__ == '__main__':
     urls = ["https://xss-quiz.int21h.jp", "http://sudo.co.il/xss/level4.php"]
-    run_tests(urls[2])
+    print(run_tests(urls[0]))

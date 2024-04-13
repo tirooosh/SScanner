@@ -41,10 +41,11 @@ class PTestToolWindow(BaseWindow):
             "   font-size: 18px;"
             "}")
 
-
-    def show_results(self, sqlResults, xssResults):
+    def show_results(self, sqlResults, xssResults, url):
         import resultWindow
-        pass
+        final_results = {**sqlResults, **xssResults}
+        print(final_results)
+        resultWindow.show_results(final_results, url)
 
     def Ptest(self):
         import sqlitest, xssiTest
@@ -53,10 +54,9 @@ class PTestToolWindow(BaseWindow):
             sqlResults = sqlitest.run_tests(url)
             xssResults = xssiTest.run_tests(url)
 
-            self.show_results(sqlResults, xssResults)
+            self.show_results(sqlResults, xssResults, url)
         else:
             print("Invalid URL")  # You might want to show this message in the GUI instead
-
 
     def validate_url(self, url):
         # Simple validation check, can be expanded based on requirements

@@ -1,5 +1,4 @@
 from PyQt5.QtWidgets import QLabel
-from hub import MainWindow
 from BaseWindow import BaseWindow
 
 
@@ -51,21 +50,10 @@ class ResultlWindow(BaseWindow):
         return url
 
 
-
-def main():
+def show_results(test_results, url):
     import sys
     from PyQt5.QtWidgets import QApplication
-
     app = QApplication(sys.argv)
-    test_results = {
-        "test1": 4,
-        "test2": 2
-    }
-    url = "https://xss-quiz.int21h.jp"
     window = ResultlWindow(test_results, url)
     window.show()
     sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()

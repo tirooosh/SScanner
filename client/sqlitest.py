@@ -162,12 +162,16 @@ def check_sqli_in_searchbar(url):
             results, found = test_sqli_payloads(browser, url, search_bar)
             if found:
                 print("SQL Injection vulnerability detected")
+                return True
             else:
                 print("No SQL injection vulnerability detected.")
+                return False
         else:
             print("Search bar not found.")
+            return False
     except Exception as e:
         print(f"An unexpected error occurred: {str(e)}")
+        return False
     finally:
         browser.quit()
 
@@ -218,6 +222,7 @@ def scan_sql_injection(url, session):
     # Test vulnerability in the URL
     if is_sql_injection_vulnerable_by_url(url, session):
         print("SQL Injection vulnerability detected in URL.")
+        return True
 
     # Test the forms on the page
     try:
@@ -228,9 +233,11 @@ def scan_sql_injection(url, session):
             form_info = form_details(form)
             content_type = response.headers.get('Content-Type')
             if is_vulnerable_form(url, form_info, session, content_type):
-                print(f"SQL Injection vulnerability detected in form on {url}")
+                print(f"SQL Injection vulnerability detected in form")
+                return True
     except requests.exceptions.RequestException as e:
         print(f"Error fetching the URL: {e}")
+        return False
 
 
 def is_vulnerable_form(base_url, form, session, content_type):
@@ -308,26 +315,44 @@ def sql_injection_scan(url):
                 else:
                     res = s.get(target_url, params=data)
                 if vulnerable(res):
-                    print(f"SQL injection vulnerability detected in form at {target_url}")
+                    print(f"SQL injection vulnerability detected in form")
+                    return True
                 else:
                     print("No SQL injection vulnerability detected.")
+                    return False
             except requests.RequestException as e:
                 print(f"Request to {target_url} failed: {e}")
+                return False
 
 
 def run_tests(test_url):
-    session = request_session()
-    sql_injection_scan(test_url)
-    scan_sql_injection(test_url, session)
-    check_sqli_in_searchbar(test_url)
-    sqlmapchecker.is_vulnerable_to_sqli(test_url)
+    results = {"test1": 0}  # Initialize the test1 count to 0
+    session = request_session()  # Make sure request_session() is properly defined or imported
+
+    # Assuming these functions are defined and return True if the test passes
+    test1 = sql_injection_scan(test_url)
+    test2 = scan_sql_injection(test_url, session)
+    test3 = check_sqli_in_searchbar(test_url)
+    test4 = sqlmapchecker.is_vulnerable_to_sqli(test_url)  # Ensure sqlmapchecker is defined/imported
+
+    # Increment test1 count for each passed test
+    if test1:
+        results["test1"] += 1
+    if test2:
+        results["test1"] += 1
+    if test3:
+        results["test1"] += 1
+    if test4:
+        results["test1"] += 1
+
+    return results
 
 
 if __name__ == '__main__':
-    test_url = ["http://testphp.vulnweb.com/artists.php?artist=1",
-                "https://demo.testfire.net"]
+    test_urls = ["http://testphp.vulnweb.com/artists.php?artist=1",
+                 "https://demo.testfire.net"]
 
-    run_tests(test_url)
+    print(run_tests(test_urls[0]))
 
     """Selenium-Based Search Bar SQL Injection Test (check_sqli_in_searchbar):
     Purpose: To detect SQL Injection vulnerabilities through a web page's search bar using automated browser interactions.
