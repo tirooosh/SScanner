@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import sqlmapchecker
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 
 def find_search_bar(browser, url, method):
@@ -151,10 +152,23 @@ def test_sqli_payloads(browser, url, search_bar):
     return results, found
 
 
+def configure_chrome():
+    chrome_options = ChromeOptions()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-experiments")
+    chrome_options.add_argument("--ignore-gpu-blacklist")
+    chrome_options.add_argument("--disable-default-apps")
+
+    driver = webdriver.Chrome(options=chrome_options)
+    return driver
+
+
 def check_sqli_in_searchbar(url):
-    options = webdriver.ChromeOptions()
-    # Set up Chrome options...
-    browser = webdriver.Chrome(options=options)
+    browser = configure_chrome()
 
     try:
         search_bar = find_search_bar(browser, url, None)[0]  # Assume find_search_bar is defined elsewhere

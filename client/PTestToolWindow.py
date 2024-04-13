@@ -42,10 +42,19 @@ class PTestToolWindow(BaseWindow):
             "}")
 
     def show_results(self, sqlResults, xssResults, url):
-        import resultWindow
+        from resultWindow import ResultWindow
         final_results = {**sqlResults, **xssResults}
-        print(final_results)
-        resultWindow.show_results(final_results, url)
+        try:
+            self.navigate_to(ResultWindow, results=final_results, url=url)
+        except:
+            print("oops")
+
+    def navigate_to(self, window_class, *args, **kwargs):
+        if window_class not in self.windows or not self.windows[window_class].isVisible():
+            self.windows[window_class] = window_class(*args, **kwargs)
+            self.windows[window_class].show()
+        else:
+            self.windows[window_class].activateWindow()  # Bring the window to the front if it's already open
 
     def Ptest(self):
         import sqlitest, xssiTest
@@ -53,7 +62,7 @@ class PTestToolWindow(BaseWindow):
         if self.validate_url(url):
             sqlResults = sqlitest.run_tests(url)
             xssResults = xssiTest.run_tests(url)
-
+            print("showing results")
             self.show_results(sqlResults, xssResults, url)
         else:
             print("Invalid URL")  # You might want to show this message in the GUI instead

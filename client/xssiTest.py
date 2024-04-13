@@ -3,7 +3,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementNotInteractableException
 import time
 from selenium.common.exceptions import UnexpectedAlertPresentException
@@ -11,6 +10,7 @@ from selenium.webdriver.support.expected_conditions import alert_is_present
 from bs4 import BeautifulSoup
 import requests
 from urllib.parse import urljoin
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 
 def find_search_bar(browser, url, method=None):
@@ -132,9 +132,23 @@ def test_xss_payloads(browser, search_bar):
     return results, found
 
 
+def configure_chrome():
+    chrome_options = ChromeOptions()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-experiments")
+    chrome_options.add_argument("--ignore-gpu-blacklist")
+    chrome_options.add_argument("--disable-default-apps")
+
+    driver = webdriver.Chrome(options=chrome_options)
+    return driver
+
 def check_xss_in_searchbar(url):
-    options = Options()
-    browser = webdriver.Chrome(options=options)
+
+    browser = configure_chrome()
 
     try:
         search_bar = find_search_bar(browser, url, None)[0]
