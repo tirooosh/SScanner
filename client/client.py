@@ -50,8 +50,32 @@ def email_exists(email):
     response = send_request_and_get_response(f"CHECK_EMAIL {email}")
     return response.get("exists", False)
 
-if __name__ == '__main__':
-    name = "tirosh"
-    email = "tiroshtayouri@gmail.com"
-    password = "tirosh45"
-    print(get_username(email))
+
+def add_test_result(test1, test2, url, username_of_searcher):
+    response = send_request_and_get_response(f"ADD_TEST_RESULT {test1} {test2} {url} {username_of_searcher}")
+    return response.get("success", False), response.get("message", "")
+
+
+def get_test_results():
+    response = send_request_and_get_response("GET_TEST_RESULTS")
+    if response.get("success", False):
+        return response.get("results", [])
+    else:
+        return []
+
+
+# if __name__ == '__main__':
+#     # Example usage
+#     email = "tiroshtayouri@gmail.com"
+#     test1 = "2"
+#     test2 = "2"
+#     url = "http://example.com/result1"
+#     username_of_searcher = "tirosh"
+#
+#     # Add a test result
+#     success, message = add_test_result(test1, test2, url, username_of_searcher)
+#     print(f"Add Test Result: Success={success}, Message={message}")
+#
+#     # Retrieve test results
+#     results = get_test_results()
+#     print(f"Test Results: {results}")

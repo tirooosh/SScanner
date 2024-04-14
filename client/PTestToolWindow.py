@@ -50,6 +50,8 @@ class PTestToolWindow(BaseWindow):
         self.email = email
 
     def show_results(self, sqlResults, xssResults, url):
+        print("sent to server")
+        client.add_test_result(sqlResults["test1"], xssResults["test2"], url, client.get_username(self.email))
         final_results = {**sqlResults, **xssResults}
         self.close_all_specific_type_windows(LoadingScreens)
         self.showNormal()
@@ -66,7 +68,6 @@ class PTestToolWindow(BaseWindow):
         import sqlitest, xssiTest
         url = self.site_input.text()  # Get the text from QLineEdit
         self.site_input.clear()
-        self.showMinimized()
         if self.validate_url(url):
             results_queue = Queue()
 
@@ -127,7 +128,7 @@ class LoadingScreens(BaseWindow):
 
         self.timer = QTimer(self)  # Create a QTimer
         self.timer.timeout.connect(self.update_image)  # Connect timeout to the update_image method
-        self.timer.start(30000)  # second = 1000
+        self.timer.start(35000)  # second = 1000
 
     def update_image(self):
         images = [

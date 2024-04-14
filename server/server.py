@@ -1,5 +1,5 @@
 import socket
-import userdatabase
+import userdatabase, testdatabase
 import json  # Import json module for parsing JSON responses
 from datetime import datetime
 
@@ -74,9 +74,19 @@ while True:
         success = userdatabase.change_name(email, new_name)
         payload = json.dumps({'success': success})
         my_socket.sendto(payload.encode(), client_address)
+    elif cmd == 'ADD_TEST_RESULT' and len(parts) == 5:
+        test1, test2, url, username_of_searcher = parts[1], parts[2], parts[3], parts[4]
+        success, message = testdatabase.insert_test_result(test1, test2, url, username_of_searcher)
+        payload = json.dumps({'success': success, 'message':message})
+        my_socket.sendto(payload.encode(), client_address)
+    elif cmd == 'GET_TEST_RESULTS':
+        results = testdatabase.retrieve_test_results()
+        response = json.dumps({"success": True, "results": results})
+        my_socket.sendto(response.encode(), client_address)
     else:
         response = json.dumps({"success": False, "message": "Unknown or malformed request"})
         my_socket.sendto(response.encode(), client_address)
+
 
 # Close the server socket
 my_socket.close()
