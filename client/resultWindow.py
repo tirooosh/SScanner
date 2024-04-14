@@ -41,6 +41,27 @@ class ResultWindow(BaseWindow):  # Corrected class name
                                     font-weight: 0;
                                 """)
 
+        self.vaunerable_label = QLabel(self)
+        self.vaunerable_label.setGeometry(762, 310, 1000, 100)
+        self.vaunerable_label.setStyleSheet("""
+                                            color: white;
+                                            background-color: transparent;
+                                            font-size: 30px;
+                                            font-family: 'Poppins';
+                                            font-weight: 0;
+                                        """)
+
+        self.vulnerable_label = QLabel(self)
+        self.vulnerable_label.setGeometry(750, 531, 1000, 100)
+        self.vulnerable_label.setStyleSheet("""
+                                                    color: white;
+                                                    background-color: transparent;
+                                                    font-size: 30px;
+                                                    font-family: 'Poppins';
+                                                    font-weight: 0;
+                                                """)
+        self.process_results()
+
     def process_url(self, url):
         if len(url) > 45:
             new_url = ""
@@ -50,6 +71,17 @@ class ResultWindow(BaseWindow):  # Corrected class name
                     new_url += "\n"
             return new_url
         return url
+
+    def process_results(self):
+        if results["test1"] > 0:
+            self.vaunerable_label.setText("vulnerable")
+        else:
+            self.vaunerable_label.setText("not vulnerable")
+
+        if results["test2"] > 0:
+            self.vulnerable_label.setText("vulnerable")
+        else:
+            self.vulnerable_label.setText("not vulnerable")
 
 
 def show_results(test_results, url):
@@ -62,6 +94,6 @@ def show_results(test_results, url):
 if __name__ == "__main__":
     # Your main window code here (if applicable)
 
-    results = {'test1': 2, 'test2': 2}
+    results = {'test1': 0, 'test2': 0}
     url = "http://testphp.vulnweb.com/artists.php?artist=1"
     show_results(results, url)
