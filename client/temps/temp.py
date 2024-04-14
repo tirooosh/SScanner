@@ -1,58 +1,50 @@
-from bs4 import BeautifulSoup
-import requests
-from urllib.parse import urljoin
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QProgressBar, QVBoxLayout
+from PyQt5.QtCore import QTimer
+import threading
 
-def find_input_fields(html):
-    soup = BeautifulSoup(html, "html.parser")
-    return soup.find_all(['input', 'textarea', 'form'])
+class TestWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.testInProgress = True
+        self.initUI()
 
-def input_field_details(form):
-    details = {
-        "action": form.attrs.get("action", "#"),
-        "method": form.attrs.get("method", "get").lower(),
-        "inputs": []
-    }
-    for input in form.find_all(['input', 'textarea']):
-        input_details = {
-            "type": input.attrs.get("type", "text"),
-            "name": input.attrs.get("name", ""),
-            "value": input.attrs.get("value", "")
-        }
-        details["inputs"].append(input_details)
-    return details
+    def initUI(self):
+        self.setGeometry(300, 300, 300, 200)
+        self.setWindowTitle('Penetration Testing Progress')
 
-def test_xss_injection(base_url, form, session):
-    action = urljoin(base_url, form['action'])
-    xss_payloads = [
-        '<script>alert("XSS")</script>',
-        '"><script>alert("XSS")</script>',
-        '" onfocus="alert(\'XSS\')" autofocus="',
-        'javascript:alert("XSS");'
-    ]
-    data = {}
-    for input in form['inputs']:
-        for payload in xss_payloads:
-            data[input['name']] = payload
-            if form['method'] == 'post':
-                response = session.post(action, data=data)
-            else:
-                response = session.get(action, params=data)
-            if payload in response.text:
-                return True
-    return False
+        self.layout = QVBoxLayout(self)
+        self.progressBar = QProgressBar(self)
+        self.progressBar.setMaximum(180)  # 180 seconds (3 minutes)
+        self.layout.addWidget(self.progressBar)
+        self.setLayout(self.layout)
 
-def scan_xss_vulnerability(url):
-    session = requests.Session()
-    try:
-        response = session.get(url)
-        forms = find_input_fields(response.text)
-        for form in forms:
-            form_info = input_field_details(form)
-            if test_xss_injection(url, form_info, session):
-                print(f"XSS vulnerability detected")
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching the URL: {e}")
+        # Timer update
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.updateProgressBar)
+        self.timer.start(1000)  # 1000 milliseconds (1 second)
+
+    def updateProgressBar(self):
+        if self.progressBar.value() < 180 and self.testInProgress:
+            self.progressBar.setValue(self.progressBar.value() + 1)
+        else:
+            self.timer.stop()  # Stop timer if maximum is reached or test is done
+            self.close()
+
+    def runPentest(self):
+        while True:
+            if input("should i stop?") == "yes":
+                self.testInProgress = False
+
+def main():
+    app = QApplication(sys.argv)
+    testWindow = TestWindow()
+    testWindow.show()
+
+    # Start the pentest in a separate thread
+    threading.Thread(target=testWindow.runPentest).start()
+
+    sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    url = ["https://xss-quiz.int21h.jp", "http://sudo.co.il/xss/level4.php","https://www.youtube.com"]  # Replace with the actual URL
-    scan_xss_vulnerability(url[2])
+    main()

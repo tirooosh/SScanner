@@ -1,8 +1,15 @@
+import threading
+from queue import Queue
+
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QLabel
-from hub import AboutWindow, MainWindow
+from PyQt5.QtWidgets import QLineEdit
+
 import client
 from BaseWindow import BaseWindow
-from PyQt5.QtWidgets import QLineEdit
+from hub import AboutWindow, MainWindow
+from resultWindow import ResultWindow
 
 
 class PTestToolWindow(BaseWindow):
@@ -40,14 +47,11 @@ class PTestToolWindow(BaseWindow):
             "   border: none;"  # Make border transparent
             "   font-size: 18px;"
             "}")
+        self.email = email
 
     def show_results(self, sqlResults, xssResults, url):
-        from resultWindow import ResultWindow
         final_results = {**sqlResults, **xssResults}
-        try:
-            self.navigate_to(ResultWindow, results=final_results, url=url)
-        except:
-            print("oops")
+        self.navigate_to(ResultWindow, results=final_results, url=url)
 
     def navigate_to(self, window_class, *args, **kwargs):
         if window_class not in self.windows or not self.windows[window_class].isVisible():
@@ -59,11 +63,42 @@ class PTestToolWindow(BaseWindow):
     def Ptest(self):
         import sqlitest, xssiTest
         url = self.site_input.text()  # Get the text from QLineEdit
+
         if self.validate_url(url):
-            sqlResults = sqlitest.run_tests(url)
-            xssResults = xssiTest.run_tests(url)
-            print("showing results")
+
+            results_queue = Queue()
+
+            # Define a common method to handle thread execution and collect results
+            def run_test(test_func):
+                result = test_func()
+                results_queue.put(result)
+
+            self.navigate_to(LoadingScreens, email=self.email)
+            # Start SQL test in a thread
+            print("sqli test starting")
+            sql_thread = threading.Thread(target=lambda: run_test(lambda: sqlitest.run_tests(url)))
+            sql_thread.start()
+
+            # Start XSS test in a thread
+            print("xssi test starting")
+            xss_thread = threading.Thread(target=lambda: run_test(lambda: xssiTest.run_tests(url)))
+            xss_thread.start()
+
+            print("loading...")
+            self.showMinimized()
+
+
+            # Wait for threads to complete and collect results
+            sql_thread.join()
+            xss_thread.join()
+
+            # Extract results
+            sqlResults = results_queue.get()
+            xssResults = results_queue.get()
+
+            # Now safely update the GUI with the results
             self.show_results(sqlResults, xssResults, url)
+            self.showNormal()
         else:
             print("Invalid URL")  # You might want to show this message in the GUI instead
 
@@ -72,3 +107,43 @@ class PTestToolWindow(BaseWindow):
         from urllib.parse import urlparse
         parsed = urlparse(url)
         return bool(parsed.scheme) and bool(parsed.netloc)
+
+
+class LoadingScreens(BaseWindow):
+    def __init__(self, email):
+        super().__init__("loading screen", f"pictures\\loadingscreen ({1}).png")
+        self.email = email
+        self.image_index = 0  # Start with the first image
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setWindowTitle('Loading Screen')
+
+        self.label = QLabel(self)  # Create a label to show the images
+        self.label.resize(1280, 800)  # Set label size
+        self.update_image()
+
+        self.timer = QTimer(self)  # Create a QTimer
+        self.timer.timeout.connect(self.update_image)  # Connect timeout to the update_image method
+        self.timer.start(2000)  # Set the timer to go off every 5 seconds
+
+    def update_image(self):
+        images = [
+            "pictures\\loadingscreen (2).png",
+            "pictures\\loadingscreen (3).png",
+            "pictures\\loadingscreen (4).png",
+            "pictures\\loadingscreen (5).png"
+        ]
+        if self.image_index < len(images):
+            self.label.setPixmap(QPixmap(images[self.image_index]))  # Update the label with new image
+            self.image_index += 1
+        else:
+            self.timer.stop()  # Stop the timer if all images have been displayed
+            self.label.setPixmap(QPixmap("pictures\\loadingscreen (5).png"))
+
+    def closeEvent(self, event):
+        self.navigate_to(PTestToolWindow, email=self.email)
+        event.accept()
+
+    def mousePressEvent(self, event):
+        pass
