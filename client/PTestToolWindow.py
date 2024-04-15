@@ -49,13 +49,15 @@ class PTestToolWindow(BaseWindow):
             "}")
         self.email = email
 
-    def show_results(self, sqlResults, xssResults, url):
-        print("sent to server")
-        client.add_test_result(sqlResults["test1"], xssResults["test2"], url, client.get_username(self.email))
-        final_results = {**sqlResults, **xssResults}
+    def prepare_show_results(self, sqlResults, xssResults, url):
+        try:
+            client.add_test_result(test1=sqlResults, test2=xssResults, url=url,
+                               username_of_searcher=self.email)
+        except Exception as e:
+            print(f"Error sending data: {e}")
         self.close_all_specific_type_windows(LoadingScreens)
         self.showNormal()
-        self.navigate_to(ResultWindow, results=final_results, url=url)
+        self.show_results(xssResults, sqlResults, url)
 
     def navigate_to(self, window_class, *args, **kwargs):
         if window_class not in self.windows or not self.windows[window_class].isVisible():
@@ -97,7 +99,9 @@ class PTestToolWindow(BaseWindow):
             # Threads have completed
             sqlResults = results_queue.get()
             xssResults = results_queue.get()
-            self.show_results(sqlResults, xssResults, self.site_input.text())
+            sql_thread.join()
+            xss_thread.join()
+            self.prepare_show_results(sqlResults, xssResults, self.site_input.text())
             self.showNormal()  # Restore the main window
 
     def validate_url(self, url):
@@ -110,6 +114,15 @@ class PTestToolWindow(BaseWindow):
         for widget in QApplication.topLevelWidgets():
             if isinstance(widget, clas):
                 widget.close()
+
+
+    def show_results(self, test1, test2, url):
+        print("showing results for", test1, test2, url)
+        try:
+            res = ResultWindow(test1, test2, url=url)
+            res.show()
+        except Exception as e:
+            print(e)
 
 
 class LoadingScreens(BaseWindow):
@@ -146,3 +159,26 @@ class LoadingScreens(BaseWindow):
 
     def mousePressEvent(self, event):
         pass
+
+
+if __name__ == '__main__':
+    import sys
+
+    app = QApplication(sys.argv)  # Initialize the QApplication
+
+    email = "temp"
+    test1 = 2
+    test2 = 2
+    url = "http://example.com/result1"
+    username_of_searcher = "tirosh"
+
+    ptest_window = PTestToolWindow(email)
+    ptest_window.show()  # Show the main window
+
+    # client.add_test_result(test1=test1, test2=test2, url=url,
+    #                        username_of_searcher=client.get_username(email))
+    # # Simulate the test results being ready
+    res = ResultWindow(test1, test2, url=url)
+    res.show()
+    ptest_window.prepare_show_results(test1, test2, url)
+    sys.exit(app.exec_())  # Start the event loop

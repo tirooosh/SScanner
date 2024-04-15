@@ -228,13 +228,13 @@ def scan_xss_vulnerability(url):
 
 
 def run_tests(url):
-    results = {"test2":0}
+    results = 0
     results_test1 = scan_xss_vulnerability(url)
     results_test2 = check_xss_in_searchbar(url)
     if results_test1:
-        results["test2"]+=1
+        results += 1
     if results_test2:
-        results["test2"] += 1
+        results += 1
     return results
 
 

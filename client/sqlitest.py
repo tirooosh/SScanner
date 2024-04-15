@@ -340,7 +340,7 @@ def sql_injection_scan(url):
 
 
 def run_tests(test_url):
-    results = {"test1": 0}  # Initialize the test1 count to 0
+    results = 0  # Initialize the test1 count to 0
     session = request_session()  # Make sure request_session() is properly defined or imported
 
     # Assuming these functions are defined and return True if the test passes
@@ -351,13 +351,13 @@ def run_tests(test_url):
 
     # Increment test1 count for each passed test
     if test1:
-        results["test1"] += 1
+        results += 1
     if test2:
-        results["test1"] += 1
+        results += 1
     if test3:
-        results["test1"] += 1
+        results += 1
     if test4:
-        results["test1"] += 1
+        results += 1
 
     return results
 

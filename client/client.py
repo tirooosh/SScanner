@@ -7,10 +7,14 @@ MAX_MSG_SIZE = 1024
 
 
 def send_request_and_get_response(request_message):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
-        my_socket.sendto(request_message.encode(), (IP, PORT))
-        response, _ = my_socket.recvfrom(MAX_MSG_SIZE)
-    return json.loads(response.decode())
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as my_socket:
+            my_socket.sendto(request_message.encode(), (IP, PORT))
+            response, _ = my_socket.recvfrom(MAX_MSG_SIZE)
+        return json.loads(response.decode())
+    except Exception as e:
+        print(f"Error sending or receiving data: {e}")
+        return {}
 
 
 def signup(name, email, password):
@@ -42,7 +46,6 @@ def get_user_details(email):
 
 def get_username(email):
     response = send_request_and_get_response(f"GET_USERNAME {email}")
-    print(response.get("success"))
     return response.get("name", "")
 
 
@@ -55,7 +58,6 @@ def add_test_result(test1, test2, url, username_of_searcher):
     response = send_request_and_get_response(f"ADD_TEST_RESULT {test1} {test2} {url} {username_of_searcher}")
     return response.get("success", False), response.get("message", "")
 
-
 def get_test_results():
     response = send_request_and_get_response("GET_TEST_RESULTS")
     if response.get("success", False):
@@ -64,18 +66,19 @@ def get_test_results():
         return []
 
 
-# if __name__ == '__main__':
-#     # Example usage
-#     email = "tiroshtayouri@gmail.com"
-#     test1 = "2"
-#     test2 = "2"
-#     url = "http://example.com/result1"
-#     username_of_searcher = "tirosh"
-#
-#     # Add a test result
-#     success, message = add_test_result(test1, test2, url, username_of_searcher)
-#     print(f"Add Test Result: Success={success}, Message={message}")
-#
-#     # Retrieve test results
-#     results = get_test_results()
-#     print(f"Test Results: {results}")
+if __name__ == '__main__':
+    # Example usage
+    email = "tiroshtayouri@gmail.com"
+    test1 = "2"
+    test2 = "2"
+    url = "http://example.com/result1"
+    username_of_searcher = "tirosh"
+
+    # Add a test result
+    success, message = add_test_result(test1, test2, url, username_of_searcher)
+    print((test1, test2, url, username_of_searcher))
+    print(f"Add Test Result: Success={success}, Message={message}")
+
+    # # Retrieve test results
+    # results = get_test_results()
+    # print(f"Test Results: {results}")

@@ -5,11 +5,11 @@ from BaseWindow import BaseWindow  # Assuming BaseWindow is your custom base cla
 
 
 class ResultWindow(BaseWindow):  # Corrected class name
-    def __init__(self, results, url):
+    def __init__(self, sqltest, xsstest, url):
         super().__init__("results", "pictures\\results.png")
 
         self.sqlres_label = QLabel(self)
-        self.sqlres_label.setText(str(results.get("test1", "")))  # Handle potential missing key
+        self.sqlres_label.setText(str(sqltest))
         self.sqlres_label.setGeometry(343, 341, 30, 40)
         self.sqlres_label.setStyleSheet("""
                     color: white;
@@ -20,7 +20,7 @@ class ResultWindow(BaseWindow):  # Corrected class name
                 """)
 
         self.xssres_label = QLabel(self)
-        self.xssres_label.setText(str(results.get("test2", "")))  # Handle potential missing key
+        self.xssres_label.setText(str(xsstest))  # Handle potential missing key
         self.xssres_label.setGeometry(333, 560, 30, 40)
         self.xssres_label.setStyleSheet("""
                             color: white;
@@ -41,9 +41,9 @@ class ResultWindow(BaseWindow):  # Corrected class name
                                     font-weight: 0;
                                 """)
 
-        self.vaunerable_label = QLabel(self)
-        self.vaunerable_label.setGeometry(762, 310, 1000, 100)
-        self.vaunerable_label.setStyleSheet("""
+        self.vulnerable_label_sql = QLabel(self)
+        self.vulnerable_label_sql.setGeometry(762, 310, 1000, 100)
+        self.vulnerable_label_sql.setStyleSheet("""
                                             color: white;
                                             background-color: transparent;
                                             font-size: 30px;
@@ -51,16 +51,16 @@ class ResultWindow(BaseWindow):  # Corrected class name
                                             font-weight: 0;
                                         """)
 
-        self.vulnerable_label = QLabel(self)
-        self.vulnerable_label.setGeometry(750, 531, 1000, 100)
-        self.vulnerable_label.setStyleSheet("""
+        self.vulnerable_label_xss = QLabel(self)
+        self.vulnerable_label_xss.setGeometry(750, 531, 1000, 100)
+        self.vulnerable_label_xss.setStyleSheet("""
                                                     color: white;
                                                     background-color: transparent;
                                                     font-size: 30px;
                                                     font-family: 'Poppins';
                                                     font-weight: 0;
                                                 """)
-        self.process_results()
+        self.process_results(sqltest, xsstest)
 
     def process_url(self, url):
         if len(url) > 45:
@@ -72,28 +72,26 @@ class ResultWindow(BaseWindow):  # Corrected class name
             return new_url
         return url
 
-    def process_results(self):
-        if results["test1"] > 0:
-            self.vaunerable_label.setText("vulnerable")
+    def process_results(self, sqltest, xsstest):
+        if sqltest > 0:
+            self.vulnerable_label_sql.setText("vulnerable")
         else:
-            self.vaunerable_label.setText("not vulnerable")
+            self.vulnerable_label_sql.setText("not vulnerable")
 
-        if results["test2"] > 0:
-            self.vulnerable_label.setText("vulnerable")
+        if xsstest > 0:
+            self.vulnerable_label_xss.setText("vulnerable")
         else:
-            self.vulnerable_label.setText("not vulnerable")
+            self.vulnerable_label_xss.setText("not vulnerable")
 
 
-def show_results(test_results, url):
+def show_results(sqltest, xsstest, url):
     app = QApplication(sys.argv)
-    window = ResultWindow(test_results, url)
+    window = ResultWindow(sqltest, xsstest, url)
     window.show()
     sys.exit(app.exec_())
 
 
 if __name__ == "__main__":
     # Your main window code here (if applicable)
-
-    results = {'test1': 0, 'test2': 0}
     url = "http://testphp.vulnweb.com/artists.php?artist=1"
-    show_results(results, url)
+    show_results(1,1, url)
