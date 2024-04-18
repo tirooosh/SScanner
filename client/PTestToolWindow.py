@@ -49,16 +49,6 @@ class PTestToolWindow(BaseWindow):
             "}")
         self.email = email
 
-    def prepare_show_results(self, sqlResults, xssResults, url):
-        try:
-            client.add_test_result(test1=sqlResults, test2=xssResults, url=url,
-                               username_of_searcher=self.email)
-        except Exception as e:
-            print(f"Error sending data: {e}")
-        self.close_all_specific_type_windows(LoadingScreens)
-        self.showNormal()
-        self.show_results(xssResults, sqlResults, url)
-
     def navigate_to(self, window_class, *args, **kwargs):
         if window_class not in self.windows or not self.windows[window_class].isVisible():
             self.windows[window_class] = window_class(*args, **kwargs)
@@ -69,9 +59,9 @@ class PTestToolWindow(BaseWindow):
     def Ptest(self):
         import sqlitest, xssiTest
         url = self.site_input.text()  # Get the text from QLineEdit
-        self.site_input.clear()
         if self.validate_url(url):
             results_queue = Queue()
+            self.site_input.clear()
 
             def run_test(test_func, func_arg):
                 result = test_func(func_arg)
@@ -87,22 +77,22 @@ class PTestToolWindow(BaseWindow):
             xss_thread.start()
 
             # Check the threads in intervals without blocking main thread
-            self.check_threads(sql_thread, xss_thread, results_queue)
+            self.check_threads(sql_thread, xss_thread, results_queue, url)
         else:
             print("Invalid URL")
 
-    def check_threads(self, sql_thread, xss_thread, results_queue):
+    def check_threads(self, sql_thread, xss_thread, results_queue, url):
         if sql_thread.is_alive() or xss_thread.is_alive():
             # Recheck in 100 ms
-            QTimer.singleShot(100, lambda: self.check_threads(sql_thread, xss_thread, results_queue))
+            QTimer.singleShot(100, lambda: self.check_threads(sql_thread, xss_thread, results_queue, url))
         else:
             # Threads have completed
             sqlResults = results_queue.get()
             xssResults = results_queue.get()
             sql_thread.join()
             xss_thread.join()
-            self.prepare_show_results(sqlResults, xssResults, self.site_input.text())
-            self.showNormal()  # Restore the main window
+            print(sqlResults, xssResults, url)
+            self.prepare_show_results(sqlResults, xssResults, url)
 
     def validate_url(self, url):
         # Simple validation check, can be expanded based on requirements
@@ -110,19 +100,21 @@ class PTestToolWindow(BaseWindow):
         parsed = urlparse(url)
         return bool(parsed.scheme) and bool(parsed.netloc)
 
+    def prepare_show_results(self, sqlResults, xssResults, url):
+        try:
+            client.add_test_result(test1=sqlResults, test2=xssResults, url=url, email_of_searcher=self.email)
+            self.show_results(sqlResults, xssResults, url)
+        except Exception as e:
+            print(f"Error sending data: {e}")
+        self.close_all_specific_type_windows(LoadingScreens)
+
+    def show_results(self, sqlResults, xssResults, url):
+        self.navigate_to(ResultWindow, sqltest=sqlResults, xsstest=xssResults, url=url)
+
     def close_all_specific_type_windows(self, clas):
         for widget in QApplication.topLevelWidgets():
             if isinstance(widget, clas):
                 widget.close()
-
-
-    def show_results(self, test1, test2, url):
-        print("showing results for", test1, test2, url)
-        try:
-            res = ResultWindow(test1, test2, url=url)
-            res.show()
-        except Exception as e:
-            print(e)
 
 
 class LoadingScreens(BaseWindow):
@@ -167,18 +159,13 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)  # Initialize the QApplication
 
     email = "temp"
-    test1 = 2
-    test2 = 2
+    sqlResults = 2
+    xssResults = 2
     url = "http://example.com/result1"
     username_of_searcher = "tirosh"
 
     ptest_window = PTestToolWindow(email)
-    ptest_window.show()  # Show the main window
+    # ptest_window.show()  # Show the main window
 
-    # client.add_test_result(test1=test1, test2=test2, url=url,
-    #                        username_of_searcher=client.get_username(email))
-    # # Simulate the test results being ready
-    res = ResultWindow(test1, test2, url=url)
-    res.show()
-    ptest_window.prepare_show_results(test1, test2, url)
+    ptest_window.show_results(sqlResults,xssResults,url)
     sys.exit(app.exec_())  # Start the event loop

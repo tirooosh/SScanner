@@ -54,8 +54,8 @@ def email_exists(email):
     return response.get("exists", False)
 
 
-def add_test_result(test1, test2, url, username_of_searcher):
-    response = send_request_and_get_response(f"ADD_TEST_RESULT {test1} {test2} {url} {username_of_searcher}")
+def add_test_result(test1, test2, url, email_of_searcher):
+    response = send_request_and_get_response(f"ADD_TEST_RESULT {test1} {test2} {url} {email_of_searcher}")
     return response.get("success", False), response.get("message", "")
 
 def get_test_results():
