@@ -33,7 +33,7 @@ while True:
         email, password = parts[1], parts[2]
         success = userdatabase.login(email, password)
         payload = json.dumps({'success': success})
-        print("sent "+payload)
+        print("sent " + payload)
         my_socket.sendto(payload.encode(), client_address)
     elif cmd == 'SIGNUP' and len(parts) == 4:
         name, email, password = parts[1], parts[2], parts[3]
@@ -77,16 +77,21 @@ while True:
     elif cmd == 'ADD_TEST_RESULT' and len(parts) == 5:
         test1, test2, url, username_of_searcher = parts[1], parts[2], parts[3], parts[4]
         success, message = testdatabase.insert_test_result(test1, test2, url, username_of_searcher)
-        payload = json.dumps({'success': success, 'message':message})
+        payload = json.dumps({'success': success, 'message': message})
         my_socket.sendto(payload.encode(), client_address)
-    elif cmd == 'GET_TEST_RESULTS':
-        results = testdatabase.retrieve_test_results()
+    elif cmd == 'GET_All_TEST_RESULTS':
+        results = testdatabase.retrieve_all_test_results()
         response = json.dumps({"success": True, "results": results})
         my_socket.sendto(response.encode(), client_address)
+    elif cmd == 'GET_TEST_RESULT_FOR_USER' and len(parts) == 2:
+        email = parts[1]
+        results = testdatabase.retrieve_tests_by_user(email)
+        response = json.dumps({"success": True, "results": results})
+        my_socket.sendto(response.encode(), client_address)
+
     else:
         response = json.dumps({"success": False, "message": "Unknown or malformed request"})
         my_socket.sendto(response.encode(), client_address)
-
 
 # Close the server socket
 my_socket.close()

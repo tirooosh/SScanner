@@ -1,10 +1,10 @@
 import sys
 
 from PyQt5.QtWidgets import QLabel, QApplication
-from BaseWindow import BaseWindow  # Assuming BaseWindow is your custom base class
+from BaseWindow import BaseWindow
 
 
-class ResultWindow(BaseWindow):  # Corrected class name
+class ResultWindow(BaseWindow):
     def __init__(self, sqltest, xsstest, url):
         super().__init__("results", "pictures\\results.png")
 
@@ -73,12 +73,12 @@ class ResultWindow(BaseWindow):  # Corrected class name
         return url
 
     def process_results(self, sqltest, xsstest):
-        if sqltest > 0:
+        if int(sqltest) > 0:
             self.vulnerable_label_sql.setText("vulnerable")
         else:
             self.vulnerable_label_sql.setText("not vulnerable")
 
-        if xsstest > 0:
+        if int(xsstest) > 0:
             self.vulnerable_label_xss.setText("vulnerable")
         else:
             self.vulnerable_label_xss.setText("not vulnerable")

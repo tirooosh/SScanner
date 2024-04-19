@@ -27,11 +27,11 @@ def setup_database():
     sql_create_tests_table = """
     CREATE TABLE IF NOT EXISTS test_results (
         id INTEGER PRIMARY KEY,
-        test1 TEXT NOT NULL,
-        test2 TEXT NOT NULL,
+        sqltest TEXT NOT NULL,
+        xsstest TEXT NOT NULL,
         url TEXT NOT NULL,
         time_of_taking TEXT NOT NULL,
-        username_of_searcher TEXT NOT NULL
+        email_of_searcher TEXT NOT NULL
     );
     """
     conn = create_connection(database)
@@ -42,12 +42,13 @@ def setup_database():
 
 
 def insert_test_result(test1, test2, url, username_of_searcher):
+    setup_database()
     """Insert a new test result into the test_results table."""
     conn = create_connection("pentestResults.db")
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         cursor = conn.cursor()
-        sql = '''INSERT INTO test_results(test1, test2, url, time_of_taking, username_of_searcher)
+        sql = '''INSERT INTO test_results(sqltest, xsstest, url, time_of_taking, email_of_searcher)
                  VALUES(?,?,?,?,?)'''
         cursor.execute(sql, (test1, test2, url, timestamp, username_of_searcher))
         conn.commit()
@@ -60,7 +61,8 @@ def insert_test_result(test1, test2, url, username_of_searcher):
             conn.close()
 
 
-def retrieve_test_results():
+def retrieve_all_test_results():
+    setup_database()
     """Retrieve all test results from the test_results table."""
     conn = create_connection("pentestResults.db")
     try:
@@ -73,17 +75,34 @@ def retrieve_test_results():
         if conn:
             conn.close()
 
+def retrieve_tests_by_user(email):
+    setup_database()
+    """Retrieve test results for a specific user identified by their email."""
+    conn = create_connection("pentestResults.db")
+    try:
+        cursor = conn.cursor()
+        sql = "SELECT * FROM test_results WHERE email_of_searcher=?"
+        cursor.execute(sql, (email,))
+        results = cursor.fetchall()
+        return results
+    except sqlite3.Error as e:
+        print(e)
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
 
 def main():
     setup_database()
 
     # Example usage:
-    insert_status, message = insert_test_result("Test1 data", "Test2 data", "http://example.com", "user123")
+    insert_status, message = insert_test_result("Test1 data", "Test2 data", "http://example.com", "user123@gmail.com")
     print(message)
+    print(retrieve_tests_by_user("user123"))
 
-    results = retrieve_test_results()
-    for result in results:
-        print(result)
+
 
 
 if __name__ == '__main__':

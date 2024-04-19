@@ -58,8 +58,17 @@ def add_test_result(test1, test2, url, email_of_searcher):
     response = send_request_and_get_response(f"ADD_TEST_RESULT {test1} {test2} {url} {email_of_searcher}")
     return response.get("success", False), response.get("message", "")
 
-def get_test_results():
-    response = send_request_and_get_response("GET_TEST_RESULTS")
+
+def get_all_test_results():
+    response = send_request_and_get_response("GET_All_TEST_RESULTS")
+    if response.get("success", False):
+        return response.get("results", [])
+    else:
+        return []
+
+
+def get_results_from_user(email):
+    response = send_request_and_get_response(f"GET_TEST_RESULT_FOR_USER {email}")
     if response.get("success", False):
         return response.get("results", [])
     else:
@@ -68,17 +77,15 @@ def get_test_results():
 
 if __name__ == '__main__':
     # Example usage
-    email = "tiroshtayouri@gmail.com"
+    email = "user123@gmail.com"
     test1 = "2"
     test2 = "2"
-    url = "http://example.com/result1"
+    url = "http://example.com/result1asdasdasdasdasdadasdadadasdasdasdasdasdasdasdasdasdasdaddasdfsdfsdfgsdfsdfsdfsdfsdfsdfsdfsd"
     username_of_searcher = "tirosh"
 
-    # Add a test result
-    success, message = add_test_result(test1, test2, url, username_of_searcher)
-    print((test1, test2, url, username_of_searcher))
-    print(f"Add Test Result: Success={success}, Message={message}")
+    add_test_result(test1,test2,url,email)
 
     # # Retrieve test results
-    # results = get_test_results()
+    results = get_results_from_user(email)
+    print(results)
     # print(f"Test Results: {results}")
