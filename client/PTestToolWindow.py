@@ -10,16 +10,17 @@ import client
 from BaseWindow import BaseWindow
 from hub import AboutWindow, MainWindow
 from resultWindow import ResultWindow
+from historyWindow import HistoryWindow
 
 
 class PTestToolWindow(BaseWindow):
     def __init__(self, email):
         super().__init__("Ptest tool", "pictures\\pTestTool.png")
         self.setup_buttons("About", (878, 74), (70, 20), lambda: self.navigate_to(AboutWindow))
-        self.setup_buttons("History", (711, 74), (142, 20), lambda: self.navigate_to(
-            AboutWindow))  # Assuming this should navigate to a HistoryWindow instead
+        self.setup_buttons("History", (711, 74), (142, 20), lambda: self.show_history(
+            email=email))
         self.setup_buttons("main", (613, 74), (85, 20), lambda: self.navigate_to(
-            MainWindow))  # Assuming this is for logout, consider renaming the button
+            MainWindow))
         self.setup_buttons("search", (1035, 377), (50, 50),
                            self.Ptest)  # Assuming this is a placeholder for a future feature
 
@@ -55,6 +56,13 @@ class PTestToolWindow(BaseWindow):
             self.windows[window_class].show()
         else:
             self.windows[window_class].activateWindow()  # Bring the window to the front if it's already open
+
+    def show_history(self, email):
+        try:
+            win = HistoryWindow(email)
+            win.show()
+        except Exception as e:
+            print(e)
 
     def Ptest(self):
         import sqlitest, xssiTest
@@ -165,7 +173,6 @@ if __name__ == '__main__':
     username_of_searcher = "tirosh"
 
     ptest_window = PTestToolWindow(email)
-    # ptest_window.show()  # Show the main window
+    ptest_window.show()  # Show the main window
 
-    ptest_window.show_results(sqlResults,xssResults,url)
     sys.exit(app.exec_())  # Start the event loop

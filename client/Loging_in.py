@@ -125,7 +125,7 @@ class SignUpWindow(BaseWindow):
         try:
             success = client.signup(name, email, password)
             if success:
-                self.navigate_to(PTestToolWindow, email=email)
+                self.navigate_to(SignInWindow)
         except Exception as e:
             print(f"Error during signup: {e}")
 
