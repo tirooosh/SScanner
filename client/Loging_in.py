@@ -1,6 +1,6 @@
 from BaseWindow import BaseWindow
 from PTestToolWindow import PTestToolWindow
-from PyQt5.QtWidgets import QLineEdit
+from PyQt5.QtWidgets import QLineEdit, QLabel
 import re
 import client
 import random
@@ -64,6 +64,17 @@ class SignUpWindow(BaseWindow):
 
         self.setup_buttons("Show Password", (985, 455), (40, 40), self.show_password)
 
+        self.error_label = QLabel(self)
+        self.error_label.setText("")
+        self.error_label.setGeometry(660, 640, 2000, 30)
+        self.error_label.setStyleSheet("""
+            color: white;
+            background-color: transparent;
+            font-size: 20px;
+            font-family: montserrat;
+            font-weight: 500;
+        """)
+
     def go_to_main(self):
         from hub import MainWindow
         self.navigate_to(MainWindow)
@@ -83,40 +94,51 @@ class SignUpWindow(BaseWindow):
         repeat_password = self.repeat_password_input.text()
 
         def is_valid_email(email):
-            # Simple regex for validating an Email
-            pattern = r'^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
-            return re.match(pattern, email) is not None
+            try:
+                if (client.get_username(email)) == "":
+                    # Simple regex for validating an Email
+                    pattern = r'^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
+                    if not client.email_exists(email) and re.match(pattern, email) is not None:
+                        return True
+                    else:
+                        return False
+
+            except Exception as e:
+                print(e)
+            return False
 
         # Check for a valid email
         if not is_valid_email(email):
-            print("Invalid email format.")
+            self.error_label.setText("Invalid email.")
             return False
 
         # Password length check
         if len(password) < 8:
-            print("Password must be at least 8 characters.")
+            self.error_label.setText("Password must be at least 8 characters.")
             return False
 
         # Password complexity check
         if not re.search("[a-z]", password) or not re.search("[A-Z]", password) or not re.search("[0-9]",
                                                                                                  password) or not re.search(
             "[_@$!#%*]", password):
-            print("Password must contain lowercase, uppercase, numeric, and special characters (_, @, $, !, #, etc...).")
+            self.error_label.setGeometry(100, 640, 2000, 30)
+            self.error_label.setText(
+                "Password must contain lowercase, uppercase, numeric, and special characters (_, @, $, !, #, etc...).")
             return False
 
         # Passwords match check
         if password != repeat_password:
-            print("Passwords do not match.")
+            self.error_label.setText("Passwords do not match.")
             return False
 
         # Username length check
         if len(name) < 2 or len(name) > 20:
-            print("The username must be between 2 and 20 characters.")
+            self.error_label.setText("The username must be between 2 and 20 characters.")
             return False
 
         # Password space check
         if " " in password:
-            print("Password cannot contain spaces.")
+            self.error_label.setText("Password cannot contain spaces.")
             return False
 
         # If all checks passed
@@ -163,6 +185,17 @@ class SignInWindow(BaseWindow):
 
         self.setup_buttons("show password", (985, 380), (40, 40), self.show_password)
 
+        self.error_label = QLabel(self)
+        self.error_label.setText("")
+        self.error_label.setGeometry(660, 640, 2000, 30)
+        self.error_label.setStyleSheet("""
+                    color: white;
+                    background-color: transparent;
+                    font-size: 20px;
+                    font-family: montserrat;
+                    font-weight: 500;
+                """)
+
     def go_to_main(self):
         from hub import MainWindow
         self.navigate_to(MainWindow)
@@ -183,7 +216,7 @@ class SignInWindow(BaseWindow):
             if can_login:
                 self.navigate_to(PTestToolWindow, email=email)
             else:
-                print("not valid")
+                self.error_label.setText("not valid")
         except Exception as e:
             print(f"Error during login: {e}")
 
@@ -205,6 +238,17 @@ class ForgotPasswordWindow(BaseWindow):
                 font-size: 18px;
             }""")
 
+        self.error_label = QLabel(self)
+        self.error_label.setText("")
+        self.error_label.setGeometry(660, 640, 2000, 30)
+        self.error_label.setStyleSheet("""
+                    color: white;
+                    background-color: transparent;
+                    font-size: 20px;
+                    font-family: montserrat;
+                    font-weight: 500;
+                """)
+
     def check_credentials(self):
         email = self.email_input.text()
         try:
@@ -212,7 +256,7 @@ class ForgotPasswordWindow(BaseWindow):
             if exist:
                 self.navigate_to(ForgotPassword2Window, email=email)
             else:
-                print("Email not in system")
+                self.error_label.setText("Email not in system")
         except Exception as e:
             print(f"Error checking email: {e}")
 
@@ -245,6 +289,17 @@ class ForgotPassword2Window(BaseWindow):
                 font-size: 18px;
             }""")
 
+        self.error_label = QLabel(self)
+        self.error_label.setText("")
+        self.error_label.setGeometry(660, 640, 2000, 30)
+        self.error_label.setStyleSheet("""
+                            color: white;
+                            background-color: transparent;
+                            font-size: 20px;
+                            font-family: montserrat;
+                            font-weight: 500;
+                        """)
+
     def send_reset_code(self):
         try:
 
@@ -264,11 +319,11 @@ class ForgotPassword2Window(BaseWindow):
                 server.login(sender_email, app_password)
                 server.sendmail(sender_email, self.email, message.as_string())
 
-            print(f"Reset code sent to {self.email}. Check your email.")
+            self.error_label.setText(f"Reset code sent to {self.email}. Check your email.")
             response = {'message': 'Code sent successfully.'}
             return response
         except Exception as e:
-            print(f"Error sending email: {e}")
+            self.error_label.setText(f"Error sending email: {e}")
             response = {'message': f'Failed to send reset code. Error: {str(e)}'}
             return response
 
@@ -277,7 +332,7 @@ class ForgotPassword2Window(BaseWindow):
         if self.reset_code == confirmation_input:
             self.navigate_to(ChangePasswordWindow, email=self.email)
         else:
-            print("Incorrect code")
+            self.error_label.setText("Incorrect code")
 
     def go_to_main(self):
         from hub import MainWindow
@@ -317,6 +372,17 @@ class ChangePasswordWindow(BaseWindow):
 
         self.setup_buttons("Show Password", (985, 270), (40, 40), self.show_password)
 
+        self.error_label = QLabel(self)
+        self.error_label.setText("")
+        self.error_label.setGeometry(660, 640, 2000, 30)
+        self.error_label.setStyleSheet("""
+                                    color: white;
+                                    background-color: transparent;
+                                    font-size: 20px;
+                                    font-family: montserrat;
+                                    font-weight: 500;
+                                """)
+
     def show_password(self):
         if self.password_input.echoMode() == QLineEdit.Password:
             # If the password is currently hidden, show it
@@ -334,19 +400,19 @@ class ChangePasswordWindow(BaseWindow):
         repeat_password = self.repeat_password_input.text()
 
         if len(password) < 6:
-            print("Weak password")
+            self.error_label.setText("Weak password")
             return
 
         if password != repeat_password:
-            print("Passwords do not match")
+            self.error_label.setText("Passwords do not match")
             return
 
         try:
             is_changed = client.change_password(self.email, password)
             if is_changed:
-                print("sucssesfull")
+                self.error_label.setText("sucssesfull")
                 self.navigate_to(SignInWindow)
             else:
-                print("oopsy")
+                self.error_label.setText("oopsy")
         except Exception as e:
             print(f"Error changing password: {e}")

@@ -92,6 +92,28 @@ def retrieve_tests_by_user(email):
         if conn:
             conn.close()
 
+def get_test_result_by_url(url):
+    setup_database()
+    """Retrieve the first test result for a specific URL."""
+    conn = create_connection("pentestResults.db")
+    try:
+        cursor = conn.cursor()
+        # Select the oldest entry for the given URL
+        sql = "SELECT * FROM test_results WHERE url = ? ORDER BY time_of_taking ASC LIMIT 1"
+        cursor.execute(sql, (url,))
+        result = cursor.fetchone()  # fetchone() retrieves the first row of the query
+        if result:
+            return True, result
+        else:
+            return False, "No previous test results found for this URL."
+    except sqlite3.Error as e:
+        print(e)
+        return False, f"Database error: {e}"
+    finally:
+        if conn:
+            conn.close()
+
+
 
 
 def main():

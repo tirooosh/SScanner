@@ -88,10 +88,18 @@ while True:
         results = testdatabase.retrieve_tests_by_user(email)
         response = json.dumps({"success": True, "results": results})
         my_socket.sendto(response.encode(), client_address)
+    elif cmd == 'GET_TEST_RESULTS_FOR_URL' and len(parts) == 2:
+        url = parts[1]
+        exists, result = testdatabase.get_test_result_by_url(url)
+        if exists:
+            response = json.dumps({"success": True, "results": result})
+        else:
+            response = json.dumps({"success": False, "message": result})
+        my_socket.sendto(response.encode(), client_address)
 
     else:
-        response = json.dumps({"success": False, "message": "Unknown or malformed request"})
-        my_socket.sendto(response.encode(), client_address)
+            response = json.dumps({"success": False, "message": "Unknown or malformed request"})
+            my_socket.sendto(response.encode(), client_address)
 
 # Close the server socket
 my_socket.close()

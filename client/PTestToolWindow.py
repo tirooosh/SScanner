@@ -19,7 +19,7 @@ class PTestToolWindow(BaseWindow):
         self.setup_buttons("About", (878, 74), (70, 20), lambda: self.navigate_to(AboutWindow))
         self.setup_buttons("History", (711, 74), (142, 20), lambda: self.show_history(
             email=email))
-        self.setup_buttons("main", (613, 74), (85, 20), lambda: self.navigate_to(
+        self.setup_buttons("Log_out", (613, 74), (85, 20), lambda: self.logout(
             MainWindow))
         self.setup_buttons("search", (1035, 377), (50, 50),
                            self.Ptest)  # Assuming this is a placeholder for a future feature
@@ -50,6 +50,21 @@ class PTestToolWindow(BaseWindow):
             "}")
         self.email = email
 
+        self.error_label = QLabel(self)
+        self.error_label.setText("")
+        self.error_label.setGeometry(660, 640, 2000, 30)
+        self.error_label.setStyleSheet("""
+                    color: white;
+                    background-color: transparent;
+                    font-size: 20px;
+                    font-family: montserrat;
+                    font-weight: 500;
+                """)
+
+    def logout(self, window_class, *args, **kwargs):
+        self.navigate_to(window_class, *args, **kwargs)
+        self.close()
+
     def navigate_to(self, window_class, *args, **kwargs):
         if window_class not in self.windows or not self.windows[window_class].isVisible():
             self.windows[window_class] = window_class(*args, **kwargs)
@@ -78,16 +93,23 @@ class PTestToolWindow(BaseWindow):
             # Navigate to loading screen before starting tests
             self.navigate_to(LoadingScreens, email=self.email)
 
-            # Start SQL and XSS tests in separate threads
-            sql_thread = threading.Thread(target=lambda: run_test(sqlitest.run_tests, url))
-            sql_thread.start()
-            xss_thread = threading.Thread(target=lambda: run_test(xssiTest.run_tests, url))
-            xss_thread.start()
+            fast_results = client.get_results_from_url(url)
+            if fast_results is not None:
+                sqlResults = fast_results[0]
+                xssResults = fast_results[1]
+                print(sqlResults, xssResults, url)
+                self.prepare_show_results(sqlResults, xssResults, url)
+            else:
+                # Start SQL and XSS tests in separate threads
+                sql_thread = threading.Thread(target=lambda: run_test(sqlitest.run_tests, url))
+                sql_thread.start()
+                xss_thread = threading.Thread(target=lambda: run_test(xssiTest.run_tests, url))
+                xss_thread.start()
 
-            # Check the threads in intervals without blocking main thread
-            self.check_threads(sql_thread, xss_thread, results_queue, url)
+                # Check the threads in intervals without blocking main thread
+                self.check_threads(sql_thread, xss_thread, results_queue, url)
         else:
-            print("Invalid URL")
+            self.error_label.setText("Invalid URL")
 
     def check_threads(self, sql_thread, xss_thread, results_queue, url):
         if sql_thread.is_alive() or xss_thread.is_alive():
@@ -99,7 +121,6 @@ class PTestToolWindow(BaseWindow):
             xssResults = results_queue.get()
             sql_thread.join()
             xss_thread.join()
-            print(sqlResults, xssResults, url)
             self.prepare_show_results(sqlResults, xssResults, url)
 
     def validate_url(self, url):
@@ -118,6 +139,7 @@ class PTestToolWindow(BaseWindow):
 
     def show_results(self, sqlResults, xssResults, url):
         self.navigate_to(ResultWindow, sqltest=sqlResults, xsstest=xssResults, url=url)
+        self.showNormal()
 
     def close_all_specific_type_windows(self, clas):
         for widget in QApplication.topLevelWidgets():

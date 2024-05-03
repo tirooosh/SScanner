@@ -75,17 +75,27 @@ def get_results_from_user(email):
         return []
 
 
+def get_results_from_url(url):
+    response = send_request_and_get_response(f"GET_TEST_RESULTS_FOR_URL {url}")
+    if response.get("success", True):
+        res = response.get('results', [])
+        res = res[1:3]
+        return res
+    else:
+        return None
+
+
 if __name__ == '__main__':
     # Example usage
     email = "user123@gmail.com"
     test1 = "2"
     test2 = "2"
-    url = "http://example.com/result1asdasdasdasdasdadasdadadasdasdasdasdasdasdasdasdasdasdaddasdfsdfsdfgsdfsdfsdfsdfsdfsdfsdfsd"
+    url = "http://testphp.vulnweb.com/artists.php?artist=1"
     username_of_searcher = "tirosh"
 
-    add_test_result(test1,test2,url,email)
+    add_test_result(test1, test2, url, email)
 
     # # Retrieve test results
-    results = get_results_from_user(email)
+    results = get_results_from_url(url)
     print(results)
     # print(f"Test Results: {results}")

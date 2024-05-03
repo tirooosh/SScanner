@@ -7,9 +7,9 @@ from BaseWindow import BaseWindow, CustomTitleBar
 class MainWindow(BaseWindow):
     def __init__(self):
         super().__init__("Main", "pictures\\main.png")
-        self.setup_buttons("Sign In", (950, 350), (160, 200), self.go_to_sign_in)
-        self.setup_buttons("Sign Up", (1100, 690), (140, 50), self.go_to_sign_up)
-        self.setup_buttons("About", (500, 345), (160, 200), lambda: self.navigate_to(AboutWindow))
+        self.setup_buttons("Sign in", (950, 350), (160, 200), self.go_to_sign_in)
+        self.setup_buttons("About", (1100, 690), (140, 50), lambda: self.navigate_to(AboutWindow))
+        self.setup_buttons("Sing up", (500, 345), (160, 200), self.go_to_sign_up)
 
         self.sign_in_window = None
         self.sign_up_window = None
@@ -68,6 +68,13 @@ class AboutWindow(QWidget):
 
         # Buttons and other widgets can be added here
         self.setup_buttons("Main", (996, 30), (250, 65), lambda: self.navigate_to(MainWindow))
+
+        # Close button
+        close_button = QPushButton("X", self)
+        close_button.setStyleSheet("color: white; background-color: #2E3B5B; font-size: 18px; font-weight: 500;")
+        close_button.setFixedSize(30, 30)
+        close_button.move(1210, 12)
+        close_button.clicked.connect(self.close)
 
         self.windows = {}
 
