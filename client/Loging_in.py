@@ -1,3 +1,5 @@
+from PyQt5.QtCore import QEvent
+
 from BaseWindow import BaseWindow
 from PTestToolWindow import PTestToolWindow
 from PyQt5.QtWidgets import QLineEdit, QLabel
@@ -67,7 +69,7 @@ class SignUpWindow(BaseWindow):
 
         self.error_label = QLabel(self)
         self.error_label.setText("")
-        self.error_label.setGeometry(660, 640, 2000, 30)
+        self.error_label.setGeometry(620, 610, 2000, 60)
         self.error_label.setStyleSheet("""
             color: white;
             background-color: transparent;
@@ -75,6 +77,31 @@ class SignUpWindow(BaseWindow):
             font-family: montserrat;
             font-weight: 500;
         """)
+
+        # This is the label that users will hover over
+        self.text_label = QLabel("(requirements)", self)
+        self.text_label.setGeometry(1050, 455, 120, 20)
+        self.text_label.setStyleSheet("font-size: 16px;color:yellow")
+
+        # This is the label that appears when hovering over the text_label
+        self.hover_label = QLabel("Password must contain at least 8 lowercase, uppercase, \nnumeric, and special characters (_, @, $, !, #, etc...)", self)
+        self.hover_label.setGeometry(50, 200, 400, 40)
+        self.hover_label.setStyleSheet("color: white; background-color: blue; font-size: 16px;")
+        self.hover_label.hide()  # Initially hidden
+
+        # Install a custom event filter on the text_label to catch hover events
+        self.text_label.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        # Check for mouse enter event
+        if obj == self.text_label and event.type() == QEvent.Enter:
+            self.hover_label.show()
+            return True
+        # Check for mouse leave event
+        elif obj == self.text_label and event.type() == QEvent.Leave:
+            self.hover_label.hide()
+            return True
+        return super().eventFilter(obj, event)
 
     def go_to_main(self):
         from hub import MainWindow
@@ -129,10 +156,9 @@ class SignUpWindow(BaseWindow):
         # Password complexity check
         if not re.search("[a-z]", password) or not re.search("[A-Z]", password) or not re.search("[0-9]",
                                                                                                  password) or not re.search(
-            "[_@$!#%*]", password):
-            self.error_label.setGeometry(100, 640, 2000, 30)
+            "[_@$!#%*&]", password):
             self.error_label.setText(
-                "Password must contain lowercase, uppercase, numeric, and special characters (_, @, $, !, #, etc...).")
+                "Password must contain lowercase, uppercase, \nnumeric, and special characters (_, @, $, !, #, etc...).")
             return False
 
         # Passwords match check

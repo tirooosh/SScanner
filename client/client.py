@@ -1,5 +1,6 @@
 import socket
 import json  # Import json module for parsing JSON responses
+import hashlib
 
 IP = "127.0.0.1"
 PORT = 8821
@@ -17,18 +18,27 @@ def send_request_and_get_response(request_message):
         return {}
 
 
+def hash_password(password):
+    # Encode the password to bytes, then hash it and get a hexadecimal digest
+    return hashlib.sha224(password.encode()).hexdigest()
+
+
 def signup(name, email, password):
-    response = send_request_and_get_response(f"SIGNUP {name} {email} {password}")
+    hashed_password = hash_password(password)
+    # Constructing the signup request string
+    response = send_request_and_get_response(f"SIGNUP {name} {email} {hashed_password}")
     return response.get("success", False)
 
 
 def login(email, password):
-    response = send_request_and_get_response(f"LOGIN {email} {password}")
+    hashed_password = hash_password(password)
+    response = send_request_and_get_response(f"LOGIN {email} {hashed_password}")
     return response.get("success", False)
 
 
 def change_password(email, new_password):
-    response = send_request_and_get_response(f"CHANGE_PASSWORD {email} {new_password}")
+    hashed_password = hash_password(new_password)
+    response = send_request_and_get_response(f"CHANGE_PASSWORD {email} {hashed_password}")
     return response.get("success", False)
 
 
@@ -39,8 +49,6 @@ def change_name(email, new_name):
 
 def get_user_details(email):
     response = send_request_and_get_response(f"GET_USER_DETAILS {email}")
-    # Assuming the server sends back a detailed response for user details
-    # You may want to return the entire response or just the success status based on your application logic
     return response
 
 
