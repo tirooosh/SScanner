@@ -63,6 +63,7 @@ class SignUpWindow(BaseWindow):
             "}")
 
         self.setup_buttons("Show Password", (985, 455), (40, 40), self.show_password)
+        self.setup_buttons("show reapet password", (985, 545), (40, 40), self.show_reapet_password)
 
         self.error_label = QLabel(self)
         self.error_label.setText("")
@@ -87,6 +88,14 @@ class SignUpWindow(BaseWindow):
             # If the password is currently shown, hide it
             self.password_input.setEchoMode(QLineEdit.Password)
 
+    def show_reapet_password(self):
+        if self.repeat_password_input.echoMode() == QLineEdit.Password:
+            # If the password is currently hidden, show it
+            self.repeat_password_input.setEchoMode(QLineEdit.Normal)
+        else:
+            # If the password is currently shown, hide it
+            self.repeat_password_input.setEchoMode(QLineEdit.Password)
+
     def check_credentials(self):
         name = self.name_input.text()
         email = self.email_input.text()
@@ -95,13 +104,13 @@ class SignUpWindow(BaseWindow):
 
         def is_valid_email(email):
             try:
-                if (client.get_username(email)) == "":
-                    # Simple regex for validating an Email
-                    pattern = r'^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
-                    if not client.email_exists(email) and re.match(pattern, email) is not None:
-                        return True
-                    else:
-                        return False
+                # Simple regex for validating an Email
+                pattern = r'^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
+                print(client.email_exists(email))
+                if not client.email_exists(email) and re.match(pattern, email) is not None:
+                    return True
+                else:
+                    return False
 
             except Exception as e:
                 print(e)
@@ -155,7 +164,7 @@ class SignUpWindow(BaseWindow):
 class SignInWindow(BaseWindow):
     def __init__(self):
         super().__init__("SignIn", "pictures\\signIn.png")
-        self.setup_buttons("Sign Up", (905, 635), (80, 20), lambda: self.navigate_to(SignUpWindow))
+        self.setup_buttons("Sign Up", (905, 635), (90, 20), lambda: self.navigate_to(SignUpWindow))
         self.setup_buttons("Forgot Password", (905, 665), (165, 20), lambda: self.navigate_to(ForgotPasswordWindow))
         self.setup_buttons("PTest Tool", (660, 565), (375, 50), self.check_credentials)
         self.setup_buttons("Main", (996, 30), (250, 65), self.go_to_main)
@@ -187,7 +196,7 @@ class SignInWindow(BaseWindow):
 
         self.error_label = QLabel(self)
         self.error_label.setText("")
-        self.error_label.setGeometry(660, 640, 2000, 30)
+        self.error_label.setGeometry(660, 500, 2000, 30)
         self.error_label.setStyleSheet("""
                     color: white;
                     background-color: transparent;

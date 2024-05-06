@@ -1,14 +1,18 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QPainter, QColor
+from PyQt5.QtGui import QPixmap, QPainter, QColor, QPainterPath
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 
 
 class BaseWindow(QWidget):
     def __init__(self, title, image_path):
         super().__init__()
-
         self.setWindowTitle(title)
         self.setFixedSize(1280, 800)
+
+        # Set window transparency and remove the frame
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setWindowFlags(Qt.FramelessWindowHint)
+
         self.image_path = image_path
 
         # Set the background color
@@ -52,16 +56,25 @@ class BaseWindow(QWidget):
     def setup_buttons(self, text, location, size, slot):
         button = QPushButton(text, self)
         button.setStyleSheet("color: rgba(255, 255, 255, 0);background-color: transparent; font-size: 18px;")
+        # ;background-color: transparent
         button.setFixedSize(*size)
         button.move(*location)
         button.clicked.connect(slot)
 
-    def mousePressEvent(self, event):
-        x, y = event.x(), event.y()
-        print(f"Mouse Clicked at: ({x}, {y})")
+    # def mousePressEvent(self, event):
+    #     x, y = event.x(), event.y()
+    #     print(f"Mouse Clicked at: ({x}, {y})")
 
     def paintEvent(self, event):
         painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)  # Enable antialiasing for smooth corners
+
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, self.width(), self.height(), 20, 20)  # Using explicit dimensions for clarity
+        painter.setClipPath(path)
+
+        painter.fillPath(path, self.palette().window())  # Fill the path with window background color
+
         pixmap = QPixmap(self.image_path)
         painter.drawPixmap(self.rect(), pixmap)
 
