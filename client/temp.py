@@ -1,97 +1,76 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QScrollArea, QApplication
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QColor
-from BaseWindow import CustomTitleBar
-import sys
-import client
-from resultWindow import ResultWindow
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QPixmap, QPainter, QTransform
+from PyQt5.QtCore import QTimer, Qt
+from BaseWindow import BaseWindow
 
+class LoadingScreens(BaseWindow):
+    def __init__(self):
+        super().__init__("Loading Screen", "pictures\\loadingscreen.png")
+        self.num_legs = 0  # Number of legs displayed (each pair counts as two)
+        self.leg_spacing = 50  # Horizontal space between legs
+        self.x_pos = 400  # Starting x position for the first leg
+        self.x_increment = 30  # Increment for x position of the second leg in each pair
+        self.max_legs = 19  # Maximum number of legs
+        self.adding_second_leg = False  # Track if adding second leg in pair
 
-class HistoryWindow(QWidget):
-    def __init__(self, email):
-        super().__init__()
-        self.setWindowTitle("History")
-        self.setFixedSize(1280, 750)
-        self.image_path = "pictures\\history.png"
-        self.initUI(email)
-        self.windows = {}
+        # Calculate appropriate pixmap dimensions
+        self.pixmap = QPixmap(self.width(), self.height())
+        self.pixmap.fill(Qt.transparent)  # Initialize pixmap as transparent
 
-    def initUI(self, email):
-        self.setAutoFillBackground(True)
-        palette = self.palette()
-        palette.setColor(self.backgroundRole(), QColor('#2E3B5B'))
-        self.setPalette(palette)
+        self.setup_ui()
 
-        # Scrollable area setup
-        self.scroll = QScrollArea(self)
-        self.widget = QWidget()
-        self.vbox = QVBoxLayout(self.widget)  # Layout for scrollable content
-        self.vbox.setSpacing(0)  # No space between widgets
-        self.vbox.setContentsMargins(0, 0, 0, 0)  # No margins around the layout
+    def setup_ui(self):
+        self.setWindowTitle('Loading Screen')
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.add_legs)
+        self.timer.start(500)  # Start with 500 milliseconds for the first leg
 
-        # Adding custom title bar and image label
-        self.titleBar = CustomTitleBar()
-        self.vbox.addWidget(self.titleBar)
+    def add_legs(self):
+        if self.num_legs < self.max_legs:
+            base_x_position = self.x_pos + (self.num_legs // 2) * self.leg_spacing
+            y_position = 635 if not self.adding_second_leg else 652
+            x_position = base_x_position if not self.adding_second_leg else base_x_position + self.x_increment
+            scale = 0.4
 
-        self.image_label = QLabel()
-        pixmap = QPixmap(self.image_path)
-        self.image_label.setPixmap(pixmap)
-        self.vbox.addWidget(self.image_label)
+            self.draw_leg(x_position, y_position, scale)
+            self.num_legs += 1
+            self.update()  # Redraw window
 
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setWidget(self.widget)
-        self.setLayout(QVBoxLayout())
-        self.layout().addWidget(self.scroll)
-
-        # Scrollbar styling
-        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.scroll.setStyleSheet("QScrollBar:vertical {background: #2E3B5B;}")
-
-        # Close button
-        close_button = QPushButton("X", self)
-        close_button.setStyleSheet("color: white; background-color: #2E3B5B; font-size: 18px; font-weight: 500;")
-        close_button.setFixedSize(30, 30)
-        close_button.move(1210, 12)
-        close_button.clicked.connect(self.close)
-
-        self.setWindowFlags(Qt.FramelessWindowHint)
-
-        results = client.get_results_from_user(email)
-        self.add_buttons(results)  # Call separate function to add buttons
-
-    def show_result(self, result):
-        sqltest = result[1]
-        xsstest = result[2]
-        url = result[3]
-        self.navigate_to(ResultWindow, sqltest=sqltest, xsstest=xsstest, url=url)
-
-    def setup_buttons(self, text, location, size, slot):  # Not used in this fix
-        # This function is no longer needed as we're using add_buttons
-        pass
-
-    def add_buttons(self, results):
-        for i in range(len(results)):
-            result = results[i]
-            button_text = f"result number {i}"
-            button_location = (935, 280 + (i * 70) + i)
-            button_size = (280, 50)
-            button = QPushButton(button_text, self.widget)
-            button.setGeometry(button_location[0], button_location[1], button_size[0], button_size[1])
-            button.clicked.connect(lambda result=result: self.show_result(result))  # Pass result as argument
-
-            label_text1 = result[4]
-            label_location1 = (10, 290 + (i * 70) + i)
-            label_size1 = (190, 40)
-            label1 = QLabel(label_text1, self.widget)
-            label1.setGeometry(label_location1)
-    def navigate_to(self, window_class, *args, **kwargs):
-        if window_class not in self.windows or not self.windows[window_class].isVisible():
-            self.windows[window_class] = window_class(*args, **kwargs)
-            self.windows[window_class].show()
+            if not self.adding_second_leg:
+                self.adding_second_leg = True
+                self.timer.start(500)  # Same delay for the second leg
+            else:
+                self.adding_second_leg = False
+                self.timer.start(1000)  # Twice the delay before the next set
         else:
-            self.windows[window_class].activateWindow()  # Bring the window to the front if it's already open    def navigate_to(self, window_class, *args, **kwargs):
-        if window_class not in self.windows or not self.windows[window_class].isVisible():
-            self.windows[window_class] = window_class(*args, **kwargs)
-            self.windows[window_class].show()
-        else:
-            self.windows[window_class].activateWindow()  # Bring the window to the front if it's already open
+            self.reset_animation()
+
+    def reset_animation(self):
+        self.pixmap.fill(Qt.transparent)  # Clear the pixmap
+        self.num_legs = 0  # Reset the leg counter
+        self.adding_second_leg = False  # Reset leg pair state
+        self.timer.start(500)  # Restart the timer
+
+    def draw_leg(self, x, y, scale):
+        leg_pixmap = QPixmap("pictures\\etc\\duck_legs.png")
+        if leg_pixmap.isNull():
+            print("Failed to load leg image")
+            return
+        # Scale down the pixmap
+        transform = QTransform().scale(scale, scale)
+        scaled_pixmap = leg_pixmap.transformed(transform, Qt.SmoothTransformation)
+        painter = QPainter(self.pixmap)
+        painter.drawPixmap(x, y, scaled_pixmap)
+        painter.end()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)  # Ensure background is painted
+        painter = QPainter(self)
+        painter.drawPixmap(0, 0, self.pixmap)  # Draw the legs pixmap
+
+if __name__ == "__main__":
+    import sys
+    app = QApplication(sys.argv)
+    window = LoadingScreens()
+    window.show()
+    sys.exit(app.exec_())

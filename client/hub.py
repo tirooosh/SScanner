@@ -14,6 +14,8 @@ class MainWindow(BaseWindow):
         self.sign_in_window = None
         self.sign_up_window = None
 
+    def checkServer(self):
+        pass
     def go_to_sign_in(self):
         from Loging_in import SignInWindow
         # Check if the SignInWindow instance exists

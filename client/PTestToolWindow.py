@@ -1,8 +1,6 @@
 import threading
 from queue import Queue
-
-from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtWidgets import QLabel, QApplication
 from PyQt5.QtWidgets import QLineEdit
 
@@ -11,6 +9,7 @@ from BaseWindow import BaseWindow
 from hub import AboutWindow, MainWindow
 from resultWindow import ResultWindow
 from historyWindow import HistoryWindow
+from PyQt5.QtGui import QPixmap, QPainter, QTransform
 
 
 class PTestToolWindow(BaseWindow):
@@ -148,36 +147,69 @@ class PTestToolWindow(BaseWindow):
 
 
 class LoadingScreens(BaseWindow):
-    def __init__(self, email):
-        super().__init__("loading screen", f"pictures\\loadingscreen ({1}).png")
-        self.email = email
-        self.image_index = 0  # Start with the first image
+    def __init__(self):
+        super().__init__("Loading Screen", "pictures\\loadingscreen.png")
+        self.num_legs = 0  # Number of legs displayed (each pair counts as two)
+        self.leg_spacing = 50  # Horizontal space between legs
+        self.x_pos = 400  # Starting x position for the first leg
+        self.x_increment = 30  # Increment for x position of the second leg in each pair
+        self.max_legs = 19  # Maximum number of legs
+        self.adding_second_leg = False  # Track if adding second leg in pair
+
+        # Calculate appropriate pixmap dimensions
+        self.pixmap = QPixmap(self.width(), self.height())
+        self.pixmap.fill(Qt.transparent)  # Initialize pixmap as transparent
+
         self.setup_ui()
 
     def setup_ui(self):
         self.setWindowTitle('Loading Screen')
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.add_legs)
+        self.timer.start(500)  # Start with 500 milliseconds for the first leg
 
-        self.label = QLabel(self)  # Create a label to show the images
-        self.label.resize(1280, 800)  # Set label size
-        self.update_image()
+    def add_legs(self):
+        if self.num_legs < self.max_legs:
+            base_x_position = self.x_pos + (self.num_legs // 2) * self.leg_spacing
+            y_position = 635 if not self.adding_second_leg else 652
+            x_position = base_x_position if not self.adding_second_leg else base_x_position + self.x_increment
+            scale = 0.4
 
-        self.timer = QTimer(self)  # Create a QTimer
-        self.timer.timeout.connect(self.update_image)  # Connect timeout to the update_image method
-        self.timer.start(35000)  # second = 1000
+            self.draw_leg(x_position, y_position, scale)
+            self.num_legs += 1
+            self.update()  # Redraw window
 
-    def update_image(self):
-        images = [
-            "pictures\\loadingscreen (2).png",
-            "pictures\\loadingscreen (3).png",
-            "pictures\\loadingscreen (4).png",
-            "pictures\\loadingscreen (5).png"
-        ]
-        if self.image_index < len(images):
-            self.label.setPixmap(QPixmap(images[self.image_index]))  # Update the label with new image
-            self.image_index += 1
+            if not self.adding_second_leg:
+                self.adding_second_leg = True
+                self.timer.start(500)  # Same delay for the second leg
+            else:
+                self.adding_second_leg = False
+                self.timer.start(1000)  # Twice the delay before the next set
         else:
-            self.timer.stop()  # Stop the timer if all images have been displayed
-            self.label.setPixmap(QPixmap("pictures\\loadingscreen (5).png"))
+            self.reset_animation()
+
+    def reset_animation(self):
+        self.pixmap.fill(Qt.transparent)  # Clear the pixmap
+        self.num_legs = 0  # Reset the leg counter
+        self.adding_second_leg = False  # Reset leg pair state
+        self.timer.start(500)  # Restart the timer
+
+    def draw_leg(self, x, y, scale):
+        leg_pixmap = QPixmap("pictures\\etc\\duck_legs.png")
+        if leg_pixmap.isNull():
+            print("Failed to load leg image")
+            return
+        # Scale down the pixmap
+        transform = QTransform().scale(scale, scale)
+        scaled_pixmap = leg_pixmap.transformed(transform, Qt.SmoothTransformation)
+        painter = QPainter(self.pixmap)
+        painter.drawPixmap(x, y, scaled_pixmap)
+        painter.end()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)  # Ensure background is painted
+        painter = QPainter(self)
+        painter.drawPixmap(0, 0, self.pixmap)  # Draw the legs pixmap
 
     def mousePressEvent(self, event):
         pass

@@ -79,14 +79,14 @@ class SignUpWindow(BaseWindow):
         """)
 
         # This is the label that users will hover over
-        self.text_label = QLabel("(requirements)", self)
-        self.text_label.setGeometry(1050, 455, 120, 20)
-        self.text_label.setStyleSheet("font-size: 16px;color:yellow")
+        self.text_label = QLabel("(?)", self)
+        self.text_label.setGeometry(585, 455, 30, 20)
+        self.text_label.setStyleSheet("font-size: 20px;color:yellow")
 
         # This is the label that appears when hovering over the text_label
         self.hover_label = QLabel("Password must contain at least 8 lowercase, uppercase, \nnumeric, and special characters (_, @, $, !, #, etc...)", self)
-        self.hover_label.setGeometry(50, 200, 400, 40)
-        self.hover_label.setStyleSheet("color: white; background-color: blue; font-size: 16px;")
+        self.hover_label.setGeometry(120, 450, 400, 40)
+        self.hover_label.setStyleSheet("color: white; background-color: blue; font-size: 15px;")
         self.hover_label.hide()  # Initially hidden
 
         # Install a custom event filter on the text_label to catch hover events

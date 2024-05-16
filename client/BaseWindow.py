@@ -38,12 +38,12 @@ class BaseWindow(QWidget):
         self.windows = {}
 
         # close button
-        button = QPushButton("X", self)
-        button.setStyleSheet(
+        self.button = QPushButton("X", self)
+        self.button.setStyleSheet(
             "color: rgba(255, 255, 255, 255);background-color: #2E3B5B; font-size: 18px;font-weight: 500;")
-        button.setFixedSize(30, 30)
-        button.move(1240, 12)
-        button.clicked.connect(self.close)
+        self.button.setFixedSize(30, 30)
+        self.button.move(1240, 12)
+        self.button.clicked.connect(self.close)
 
     def navigate_to(self, window_class, *args, **kwargs):
         if window_class not in self.windows or not self.windows[window_class].isVisible():
