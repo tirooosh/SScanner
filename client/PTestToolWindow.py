@@ -89,9 +89,6 @@ class PTestToolWindow(BaseWindow):
                 result = test_func(func_arg)
                 results_queue.put(result)
 
-            # Navigate to loading screen before starting tests
-            self.navigate_to(LoadingScreens, email=self.email)
-
             fast_results = client.get_results_from_url(url)
             if fast_results is not None:
                 sqlResults = fast_results[0]
@@ -99,14 +96,17 @@ class PTestToolWindow(BaseWindow):
                 print(sqlResults, xssResults, url)
                 self.prepare_show_results(sqlResults, xssResults, url)
             else:
-                # Start SQL and XSS tests in separate threads
-                sql_thread = threading.Thread(target=lambda: run_test(sqlitest.run_tests, url))
-                sql_thread.start()
-                xss_thread = threading.Thread(target=lambda: run_test(xssiTest.run_tests, url))
-                xss_thread.start()
-
-                # Check the threads in intervals without blocking main thread
-                self.check_threads(sql_thread, xss_thread, results_queue, url)
+                # Navigate to loading screen before starting tests
+                self.navigate_to(LoadingScreen, email=self.email)
+                # # Start SQL and XSS tests in separate threads
+                # print("starting tests")
+                # sql_thread = threading.Thread(target=lambda: run_test(sqlitest.run_tests, url))
+                # sql_thread.start()
+                # xss_thread = threading.Thread(target=lambda: run_test(xssiTest.run_tests, url))
+                # xss_thread.start()
+                #
+                # # Check the threads in intervals without blocking main thread
+                # threading.Thread(target=lambda: self.check_threads(sql_thread, xss_thread, results_queue, url)).start()
         else:
             self.error_label.setText("Invalid URL")
 
@@ -134,7 +134,7 @@ class PTestToolWindow(BaseWindow):
             self.show_results(sqlResults, xssResults, url)
         except Exception as e:
             print(f"Error sending data: {e}")
-        self.close_all_specific_type_windows(LoadingScreens)
+        self.close_all_specific_type_windows(LoadingScreen)
 
     def show_results(self, sqlResults, xssResults, url):
         self.navigate_to(ResultWindow, sqltest=sqlResults, xsstest=xssResults, url=url)
@@ -146,7 +146,7 @@ class PTestToolWindow(BaseWindow):
                 widget.close()
 
 
-class LoadingScreens(BaseWindow):
+class LoadingScreen(BaseWindow):
     def __init__(self):
         super().__init__("Loading Screen", "pictures\\loadingscreen.png")
         self.num_legs = 0  # Number of legs displayed (each pair counts as two)
@@ -227,6 +227,7 @@ if __name__ == '__main__':
     username_of_searcher = "tirosh"
 
     ptest_window = PTestToolWindow(email)
+    ptest_window = LoadingScreen()
     ptest_window.show()  # Show the main window
 
     sys.exit(app.exec_())  # Start the event loop
