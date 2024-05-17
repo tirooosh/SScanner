@@ -29,6 +29,10 @@ while True:
         payload = json.dumps({"success": True, "message": "Goodbye!"})
         my_socket.sendto(payload.encode(), client_address)
         break
+    elif cmd == 'ALIVE?':
+        payload = json.dumps("yes")
+        my_socket.sendto(payload.encode(), client_address)
+        print("sent " + payload)
     elif cmd == 'LOGIN' and len(parts) == 3:
         email, password = parts[1], parts[2]
         success = userdatabase.login(email, password)
@@ -75,8 +79,8 @@ while True:
         payload = json.dumps({'success': success})
         my_socket.sendto(payload.encode(), client_address)
     elif cmd == 'ADD_TEST_RESULT' and len(parts) == 5:
-        test1, test2, url, username_of_searcher = parts[1], parts[2], parts[3], parts[4]
-        success, message = testdatabase.insert_test_result(test1, test2, url, username_of_searcher)
+        test1, test2, url, email_of_searcher = parts[1], parts[2], parts[3], parts[4]
+        success, message = testdatabase.insert_test_result(test1, test2, url, email_of_searcher)
         payload = json.dumps({'success': success, 'message': message})
         my_socket.sendto(payload.encode(), client_address)
     elif cmd == 'GET_All_TEST_RESULTS':

@@ -1,7 +1,7 @@
 import threading
 from queue import Queue
 from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtWidgets import QLabel, QApplication
+from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QMessageBox
 from PyQt5.QtWidgets import QLineEdit
 
 import client
@@ -90,23 +90,26 @@ class PTestToolWindow(BaseWindow):
                 results_queue.put(result)
 
             fast_results = client.get_results_from_url(url)
-            if fast_results is not None:
+            if fast_results is not None and QMessageBox.question(self, 'Notice', "Do you want to proceed?",
+                                                                 QMessageBox.Yes | QMessageBox.No,
+                                                                 QMessageBox.No) == "yes":
+
                 sqlResults = fast_results[0]
                 xssResults = fast_results[1]
                 print(sqlResults, xssResults, url)
                 self.prepare_show_results(sqlResults, xssResults, url)
             else:
                 # Navigate to loading screen before starting tests
-                self.navigate_to(LoadingScreen, email=self.email)
-                # # Start SQL and XSS tests in separate threads
-                # print("starting tests")
-                # sql_thread = threading.Thread(target=lambda: run_test(sqlitest.run_tests, url))
-                # sql_thread.start()
-                # xss_thread = threading.Thread(target=lambda: run_test(xssiTest.run_tests, url))
-                # xss_thread.start()
-                #
-                # # Check the threads in intervals without blocking main thread
-                # threading.Thread(target=lambda: self.check_threads(sql_thread, xss_thread, results_queue, url)).start()
+                self.navigate_to(LoadingScreen)
+                # Start SQL and XSS tests in separate threads
+                print("starting tests")
+                sql_thread = threading.Thread(target=lambda: run_test(sqlitest.run_tests, url))
+                sql_thread.start()
+                xss_thread = threading.Thread(target=lambda: run_test(xssiTest.run_tests, url))
+                xss_thread.start()
+
+                # Check the threads in intervals without blocking main thread
+                self.check_threads(sql_thread, xss_thread, results_queue, url)
         else:
             self.error_label.setText("Invalid URL")
 
@@ -150,10 +153,10 @@ class LoadingScreen(BaseWindow):
     def __init__(self):
         super().__init__("Loading Screen", "pictures\\loadingscreen.png")
         self.num_legs = 0  # Number of legs displayed (each pair counts as two)
-        self.leg_spacing = 50  # Horizontal space between legs
+        self.leg_spacing = 60  # Horizontal space between legs
         self.x_pos = 400  # Starting x position for the first leg
         self.x_increment = 30  # Increment for x position of the second leg in each pair
-        self.max_legs = 19  # Maximum number of legs
+        self.max_legs = 16  # Maximum number of legs
         self.adding_second_leg = False  # Track if adding second leg in pair
 
         # Calculate appropriate pixmap dimensions
@@ -161,6 +164,7 @@ class LoadingScreen(BaseWindow):
         self.pixmap.fill(Qt.transparent)  # Initialize pixmap as transparent
 
         self.setup_ui()
+        self.button.close()
 
     def setup_ui(self):
         self.setWindowTitle('Loading Screen')
@@ -173,7 +177,7 @@ class LoadingScreen(BaseWindow):
             base_x_position = self.x_pos + (self.num_legs // 2) * self.leg_spacing
             y_position = 635 if not self.adding_second_leg else 652
             x_position = base_x_position if not self.adding_second_leg else base_x_position + self.x_increment
-            scale = 0.4
+            scale = 0.5
 
             self.draw_leg(x_position, y_position, scale)
             self.num_legs += 1
@@ -227,7 +231,7 @@ if __name__ == '__main__':
     username_of_searcher = "tirosh"
 
     ptest_window = PTestToolWindow(email)
-    ptest_window = LoadingScreen()
     ptest_window.show()  # Show the main window
+
 
     sys.exit(app.exec_())  # Start the event loop

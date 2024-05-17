@@ -18,6 +18,15 @@ def send_request_and_get_response(request_message):
         return {}
 
 
+def check_server():
+    try:
+        response = send_request_and_get_response("ALIVE?")
+        if response =="yes":
+            return True
+    except Exception as e:
+        return False
+
+
 def hash_password(password):
     # Encode the password to bytes, then hash it and get a hexadecimal digest
     return hashlib.sha224(password.encode()).hexdigest()
@@ -94,16 +103,17 @@ def get_results_from_url(url):
 
 
 if __name__ == '__main__':
-    # Example usage
-    email = "user123@gmail.com"
-    test1 = "2"
-    test2 = "2"
-    url = "http://testphp.vulnweb.com/artists.php?artist=1"
-    username_of_searcher = "tirosh"
-
-    add_test_result(test1, test2, url, email)
-
-    # # Retrieve test results
-    results = get_results_from_url(url)
-    print(results)
-    # print(f"Test Results: {results}")
+    # # Example usage
+    # email = "user123@gmail.com"
+    # test1 = "2"
+    # test2 = "2"
+    # url = "http://testphp.vulnweb.com/artists.php?artist=1"
+    # username_of_searcher = "tirosh"
+    #
+    # add_test_result(test1, test2, url, email)
+    #
+    # # # Retrieve test results
+    # results = get_results_from_url(url)
+    # print(results)
+    # # print(f"Test Results: {results}")
+    check_server()
