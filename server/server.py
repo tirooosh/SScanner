@@ -1,3 +1,4 @@
+import ast
 import socket
 import userdatabase, testdatabase
 import json  # Import json module for parsing JSON responses
@@ -78,9 +79,21 @@ while True:
         success = userdatabase.change_name(email, new_name)
         payload = json.dumps({'success': success})
         my_socket.sendto(payload.encode(), client_address)
-    elif cmd == 'ADD_TEST_RESULT' and len(parts) == 5:
-        test1, test2, url, email_of_searcher = parts[1], parts[2], parts[3], parts[4]
-        success, message = testdatabase.insert_test_result(test1, test2, url, email_of_searcher)
+    elif cmd == 'ADD_TEST_RESULT' and len(parts) == 9:
+        url, email_of_searcher = parts[7], parts[8]
+        # Extract the parts that make up the lists
+        list1_str_parts = parts[1:5]
+        list2_str_parts = parts[5:7]
+
+        # Join the parts to form complete list representations
+        joined_str1 = ' '.join(list1_str_parts)
+        joined_str2 = ' '.join(list2_str_parts)
+
+        # Convert the joined strings to actual lists using ast.literal_eval
+        list1 = ast.literal_eval(joined_str1)
+        list2 = ast.literal_eval(joined_str2)
+
+        success, message = testdatabase.insert_test_result(str(list1), str(list2), url, email_of_searcher)
         payload = json.dumps({'success': success, 'message': message})
         my_socket.sendto(payload.encode(), client_address)
     elif cmd == 'GET_All_TEST_RESULTS':

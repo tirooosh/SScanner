@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QPainterPath
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QMessageBox
 
 
 class BaseWindow(QWidget):
@@ -43,7 +43,7 @@ class BaseWindow(QWidget):
             "color: rgba(255, 255, 255, 255);background-color: #2E3B5B; font-size: 18px;font-weight: 500;")
         self.button.setFixedSize(30, 30)
         self.button.move(1240, 12)
-        self.button.clicked.connect(self.close)
+        self.button.clicked.connect(self.close_button)
 
     def navigate_to(self, window_class, *args, **kwargs):
         if window_class not in self.windows or not self.windows[window_class].isVisible():
@@ -52,6 +52,14 @@ class BaseWindow(QWidget):
         else:
             self.windows[window_class].activateWindow()  # Bring the window to the front if it's already open
         self.close()
+
+    def close_button(self):
+        answer = QMessageBox.question(self, 'Notice',
+                                      "Are you sure?",
+                                      QMessageBox.Yes | QMessageBox.No,
+                                      QMessageBox.No)
+        if answer == QMessageBox.Yes:
+            self.close()
 
     def setup_buttons(self, text, location, size, slot):
         button = QPushButton(text, self)

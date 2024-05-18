@@ -1,7 +1,7 @@
 import threading
 from queue import Queue
 from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QMessageBox
+from PyQt5.QtWidgets import QLabel, QApplication, QMessageBox
 from PyQt5.QtWidgets import QLineEdit
 
 import client
@@ -90,14 +90,29 @@ class PTestToolWindow(BaseWindow):
                 results_queue.put(result)
 
             fast_results = client.get_results_from_url(url)
-            if fast_results is not None and QMessageBox.question(self, 'Notice', "Do you want to proceed?",
-                                                                 QMessageBox.Yes | QMessageBox.No,
-                                                                 QMessageBox.No) == "yes":
+            print(fast_results)
+            if fast_results is not None:
+                if QMessageBox.question(self, 'Notice',
+                                        "our system found an old check for this site do you want to save time?",
+                                        QMessageBox.Yes | QMessageBox.No,
+                                        QMessageBox.No) == QMessageBox.Yes:
 
-                sqlResults = fast_results[0]
-                xssResults = fast_results[1]
-                print(sqlResults, xssResults, url)
-                self.prepare_show_results(sqlResults, xssResults, url)
+                    sqlResults = fast_results[0]
+                    xssResults = fast_results[1]
+                    print(sqlResults, xssResults, url)
+                    self.prepare_show_results(sqlResults, xssResults, url)
+                else:
+                    # Navigate to loading screen before starting tests
+                    self.navigate_to(LoadingScreen)
+                    # Start SQL and XSS tests in separate threads
+                    print("starting tests")
+                    sql_thread = threading.Thread(target=lambda: run_test(sqlitest.run_tests, url))
+                    sql_thread.start()
+                    xss_thread = threading.Thread(target=lambda: run_test(xssiTest.run_tests, url))
+                    xss_thread.start()
+
+                    # Check the threads in intervals without blocking main thread
+                    self.check_threads(sql_thread, xss_thread, results_queue, url)
             else:
                 # Navigate to loading screen before starting tests
                 self.navigate_to(LoadingScreen)
@@ -119,8 +134,8 @@ class PTestToolWindow(BaseWindow):
             QTimer.singleShot(100, lambda: self.check_threads(sql_thread, xss_thread, results_queue, url))
         else:
             # Threads have completed
-            sqlResults = results_queue.get()
             xssResults = results_queue.get()
+            sqlResults = results_queue.get()
             sql_thread.join()
             xss_thread.join()
             self.prepare_show_results(sqlResults, xssResults, url)
@@ -233,5 +248,10 @@ if __name__ == '__main__':
     ptest_window = PTestToolWindow(email)
     ptest_window.show()  # Show the main window
 
+    # res = client.get_results_from_url("http://testphp.vulnweb.com/artists.php?artist=1")
+    # ptest_window.show_results(ast.literal_eval(res[0]),ast.literal_eval(res[1]),"http://example.com/result1")
+    # client.add_test_result([True,True,True,True],[True,True],"df","df")
+    # Client sent: ADD_TEST_RESULT [True, True, True, True] [True, True] df df at: 21:11:30
+    # Client sent: ADD_TEST_RESULT [True, True] [False, None, False, False] https://demo.testfire.net temp at: 21:16:32
 
     sys.exit(app.exec_())  # Start the event loop

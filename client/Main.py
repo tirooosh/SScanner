@@ -10,7 +10,6 @@ if client.check_server():
     # Main execution
     app = QApplication(sys.argv)
     window = MainWindow()
-    # window =SignUpWindow()
     window.show()
     sys.exit(app.exec_())
 else:
