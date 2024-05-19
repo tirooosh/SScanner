@@ -2,7 +2,7 @@ import socket
 import json  # Import json module for parsing JSON responses
 import hashlib
 
-IP = "127.0.0.1"
+IP = "10.42.100.110"
 PORT = 8821
 MAX_MSG_SIZE = 1024
 

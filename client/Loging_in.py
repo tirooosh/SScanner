@@ -326,7 +326,7 @@ class ForgotPassword2Window(BaseWindow):
 
         self.error_label = QLabel(self)
         self.error_label.setText("")
-        self.error_label.setGeometry(660, 640, 2000, 30)
+        self.error_label.setGeometry(600, 640, 2000, 30)
         self.error_label.setStyleSheet("""
                             color: white;
                             background-color: transparent;
