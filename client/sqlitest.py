@@ -168,9 +168,8 @@ def configure_chrome():
 
 
 def check_sqli_in_searchbar(url):
-    browser = configure_chrome()
-
     try:
+        browser = configure_chrome()
         search_bar = find_search_bar(browser, url, None)[0]  # Assume find_search_bar is defined elsewhere
         if search_bar:
             results, found = test_sqli_payloads(browser, url, search_bar)
@@ -231,26 +230,28 @@ def is_vulnerable(response):
 
 
 def scan_sql_injection(url, session):
-    # print(f"Testing URL: {url}")
-
-    # Test vulnerability in the URL
-    if is_sql_injection_vulnerable_by_url(url, session):
-        print("SQL Injection vulnerability detected in URL.")
-        return True
-
-    # Test the forms on the page
     try:
-        response = session.get(url)
-        forms = find_forms(response.text)
-        # print(f"Found {len(forms)} forms on {url}.")
-        for form in forms:
-            form_info = form_details(form)
-            content_type = response.headers.get('Content-Type')
-            if is_vulnerable_form(url, form_info, session, content_type):
-                print(f"SQL Injection vulnerability detected in form")
-                return True
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching the URL: {e}")
+        # Test vulnerability in the URL
+        if is_sql_injection_vulnerable_by_url(url, session):
+            print("SQL Injection vulnerability detected in URL.")
+            return True
+
+        # Test the forms on the page
+        try:
+            response = session.get(url)
+            forms = find_forms(response.text)
+            # print(f"Found {len(forms)} forms on {url}.")
+            for form in forms:
+                form_info = form_details(form)
+                content_type = response.headers.get('Content-Type')
+                if is_vulnerable_form(url, form_info, session, content_type):
+                    print(f"SQL Injection vulnerability detected in form")
+                    return True
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching the URL: {e}")
+            return False
+    except Exception as e:
+        print(e)
         return False
 
 
@@ -309,34 +310,38 @@ def vulnerable(response):
 
 
 def sql_injection_scan(url):
-    """ Scan each form for SQL injection vulnerabilities """
-    forms = get_forms(url)
-    # print(f"[+] Detected {len(forms)} forms on {url}.")
+    try:
+        """ Scan each form for SQL injection vulnerabilities """
+        forms = get_forms(url)
+        # print(f"[+] Detected {len(forms)} forms on {url}.")
 
-    for form in forms:
-        details = form_details(form)
-        for i in "\"'":
-            data = {}
-            for input_tag in details["inputs"]:
-                if input_tag["type"] == "hidden" or input_tag["value"]:
-                    data[input_tag['name']] = input_tag["value"] + i
-                elif input_tag["type"] != "submit":
-                    data[input_tag['name']] = f"test{i}"
-            target_url = urljoin(url, details["action"])
-            try:
-                if details["method"] == "post":
-                    res = s.post(target_url, data=data)
-                else:
-                    res = s.get(target_url, params=data)
-                if vulnerable(res):
-                    print(f"SQL injection vulnerability detected in form")
-                    return True
-                else:
-                    print("No SQL injection vulnerability detected.")
+        for form in forms:
+            details = form_details(form)
+            for i in "\"'":
+                data = {}
+                for input_tag in details["inputs"]:
+                    if input_tag["type"] == "hidden" or input_tag["value"]:
+                        data[input_tag['name']] = input_tag["value"] + i
+                    elif input_tag["type"] != "submit":
+                        data[input_tag['name']] = f"test{i}"
+                target_url = urljoin(url, details["action"])
+                try:
+                    if details["method"] == "post":
+                        res = s.post(target_url, data=data)
+                    else:
+                        res = s.get(target_url, params=data)
+                    if vulnerable(res):
+                        print(f"SQL injection vulnerability detected in form")
+                        return True
+                    else:
+                        print("No SQL injection vulnerability detected.")
+                        return False
+                except requests.RequestException as e:
+                    print(f"Request to {target_url} failed: {e}")
                     return False
-            except requests.RequestException as e:
-                print(f"Request to {target_url} failed: {e}")
-                return False
+    except Exception as e:
+        print(e)
+        return False
 
 
 def run_tests(test_url):

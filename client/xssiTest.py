@@ -147,10 +147,8 @@ def configure_chrome():
     return driver
 
 def check_xss_in_searchbar(url):
-
-    browser = configure_chrome()
-
     try:
+        browser = configure_chrome()
         search_bar = find_search_bar(browser, url, None)[0]
         if search_bar:
             results, found = test_xss_payloads(browser, search_bar)
@@ -213,8 +211,8 @@ def test_xss_injection(base_url, form, session):
 
 
 def scan_xss_vulnerability(url):
-    session = requests.Session()
     try:
+        session = requests.Session()
         response = session.get(url)
         forms = find_input_fields(response.text)
         for form in forms:

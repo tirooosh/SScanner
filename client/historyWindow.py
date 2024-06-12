@@ -67,6 +67,8 @@ class HistoryWindow(QWidget):
             print("No results available.")
             return  # Optionally, add some UI feedback here
         btnLst = []
+        if email == "tiroshtayouri@gmail.com":
+            results = client.get_all_test_results()
         for i, result in enumerate(results):
             btnLst.append(self.setup_buttons(
                 f"result number {i}",

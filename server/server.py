@@ -7,7 +7,7 @@ from datetime import datetime
 # Server details
 ip = "127.0.0.1"
 port = 8821
-MAX_MSG_SIZE = 1024
+MAX_MSG_SIZE = 2028
 
 # Create a UDP socket
 my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -98,6 +98,7 @@ while True:
         my_socket.sendto(payload.encode(), client_address)
     elif cmd == 'GET_All_TEST_RESULTS':
         results = testdatabase.retrieve_all_test_results()
+        results = results[1:10]
         response = json.dumps({"success": True, "results": results})
         my_socket.sendto(response.encode(), client_address)
     elif cmd == 'GET_TEST_RESULT_FOR_USER' and len(parts) == 2:
