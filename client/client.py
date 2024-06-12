@@ -2,9 +2,9 @@ import socket
 import json  # Import json module for parsing JSON responses
 import hashlib
 
-IP = "localhost"
+IP = "10.42.100.110"
 PORT = 8821
-MAX_MSG_SIZE = 2028
+MAX_MSG_SIZE = 1024
 
 
 def send_request_and_get_response(request_message):
@@ -104,15 +104,14 @@ def get_results_from_url(url):
 
 if __name__ == '__main__':
     # Example usage
-    # email = "user123@gmail.com"
-    # test1 = [False, None, False, False]
-    # test2 = [True, True]
-    # url = "http://testphp.vulnweb.com/artists.php?artist=1"
-    # username_of_searcher = "tirosh"
-    #
-    # add_test_result(test1, test2, url, email)
+    email = "user123@gmail.com"
+    test1 = [False, None, False, False]
+    test2 = [True, True]
+    url = "http://testphp.vulnweb.com/artists.php?artist=1"
+    username_of_searcher = "tirosh"
+
+    add_test_result(test1, test2, url, email)
 
     # Retrieve test results
     # results = get_results_from_url(url)
     # print(f"Test Results: {results}")
-    print(get_all_test_results())
