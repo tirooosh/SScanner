@@ -2,9 +2,9 @@ import socket
 import json  # Import json module for parsing JSON responses
 import hashlib
 
-IP = "10.42.100.110"
+IP = "192.168.1.147"
 PORT = 8821
-MAX_MSG_SIZE = 1024
+MAX_MSG_SIZE = 2028
 
 
 def send_request_and_get_response(request_message):

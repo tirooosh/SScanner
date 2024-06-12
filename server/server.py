@@ -5,7 +5,8 @@ import json  # Import json module for parsing JSON responses
 from datetime import datetime
 
 # Server details
-ip = "127.0.0.1"
+hostname = socket.gethostname()
+ip = socket.gethostbyname(hostname)
 port = 8821
 MAX_MSG_SIZE = 2028
 
@@ -13,7 +14,7 @@ MAX_MSG_SIZE = 2028
 my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 my_socket.bind((ip, port))
 
-print("Server started")
+print(f"Server started at ip {ip}")
 
 while True:
     # Receive request from the client

@@ -79,6 +79,7 @@ def analyze_response(browser, payload):
         alert = browser.switch_to.alert
         alert_text = alert.text
         alert.accept()  # Dismiss the alert
+        print(payload)
         return True, f"Alert triggered with text: {alert_text}, payload: {payload}"
 
     except TimeoutException:
